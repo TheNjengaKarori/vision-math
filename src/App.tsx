@@ -218,6 +218,16 @@ const NEMETH_DICT = [
   { ascii: "->", symbol: "→", name: "Right Arrow" },
 ];
 
+const HELP_MENU_ITEMS = [
+  { name: "Command Palette", shortcut: "Ctrl + M", text: "To open the command palette: Control, M", action: "command_palette" },
+  { name: "Evaluate Math", shortcut: "Ctrl + =", text: "To evaluate math: Control, Equals", action: "evaluate_math" },
+  { name: "Toggle Scratchpad (Rough Work)", shortcut: "Alt + R", text: "To open rough work: Alt, R", action: "toggle_scratchpad" },
+  { name: "Where Am I? Context Locator", shortcut: "Double Shift", text: "For context locator: Double-click Shift", action: "context_locator" },
+  { name: "Undo", shortcut: "Ctrl + Z", text: "To undo: Control, Z", action: "undo" },
+  { name: "Redo", shortcut: "Ctrl + Y", text: "To redo: Control, Y", action: "redo" },
+  { name: "Help Menu", shortcut: "Alt + H", text: "To open this help menu: Alt, H", action: "help_menu" },
+];
+
 interface MathBlock {
   id: string;
   r: number;
@@ -306,6 +316,11 @@ export default function App() {
   const [gridData, setGridData] = useState<Record<string, string>>({});
   const [bgType, setBgType] = useState<"grid" | "blank">("grid");
 
+  const [isHelpMenuOpen, setIsHelpMenuOpen] = useState(false);
+  const [helpMenuSelectedIndex, setHelpMenuSelectedIndex] = useState(0);
+  const helpMenuRef = useRef<HTMLDivElement>(null);
+  const helpMenuInputRef = useRef<HTMLInputElement>(null);
+
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [paletteSearch, setPaletteSearch] = useState("");
   const [paletteSelectedIndex, setPaletteSelectedIndex] = useState(0);
@@ -358,6 +373,16 @@ export default function App() {
     computedAnswers: [] as any[],
     blocks: [] as MathBlock[],
   });
+
+  const historyRef = useRef<{
+    main: { gridData: Record<string, string>; activeCell: { r: number; c: number }; desc: string }[];
+    scratch: { gridData: Record<string, string>; activeCell: { r: number; c: number }; desc: string }[];
+  }>({
+    main: [{ gridData: {}, activeCell: { r: 0, c: 0 }, desc: "Initial empty worksheet" }],
+    scratch: [{ gridData: {}, activeCell: { r: 0, c: 0 }, desc: "Initial empty scratchpad" }],
+  });
+  const historyIndexRef = useRef<{ main: number; scratch: number }>({ main: 0, scratch: 0 });
+  const isUndoRedoActionRef = useRef(false);
 
   const consecutiveRCount = useRef(0);
   const lastRPressTime = useRef(0);
@@ -448,6 +473,76 @@ export default function App() {
     setBlocks(getEquationBlocks(gridData));
   }, [gridData]);
 
+  const generateDiffDescription = (prev: Record<string, string>, next: Record<string, string>, activeCellRow: number, isUndo: boolean = false) => {
+    const prevKeys = Object.keys(prev);
+    const nextKeys = Object.keys(next);
+    
+    const added: string[] = [];
+    const removed: string[] = [];
+    
+    for (const key of nextKeys) {
+      if (prev[key] !== next[key]) added.push(key);
+    }
+    for (const key of prevKeys) {
+      if (!(key in next)) removed.push(key);
+    }
+
+    const getSymbolName = (char: string) => {
+       const match = MATH_SYMBOLS.find(s => s.symbol === char) || AUTOCOMPLETE_DICT.find(d => d.symbol === char);
+       return match ? match.name : char;
+    }
+
+    const verbAdd = isUndo ? "Restored" : "Added";
+    const verbRemove = isUndo ? "Reverted addition of" : "Deleted";
+    const verbModify = isUndo ? "Restored" : "Modified";
+
+    if (added.length === 1 && removed.length === 0) {
+      const char = next[added[0]];
+      const r = parseInt(added[0].split(",")[0]) + 1;
+      return `${verbAdd} ${getSymbolName(char)} on line ${r}`;
+    } else if (removed.length === 1 && added.length === 0) {
+      const char = prev[removed[0]];
+      const r = parseInt(removed[0].split(",")[0]) + 1;
+      return `${verbRemove} ${getSymbolName(char)} on line ${r}`;
+    } else if (added.length === 0 && removed.length === 0) {
+      return "no changes";
+    } else if (added.length > 0 && removed.length > 0) {
+      return `${verbModify} contents on line ${parseInt(added[0].split(",")[0]) + 1}`;
+    } else if (added.length > 1) {
+      return `${verbAdd} multiple items on line ${parseInt(added[0].split(",")[0]) + 1}`;
+    } else if (removed.length > 1) {
+      return `${verbRemove} multiple items on line ${parseInt(removed[0].split(",")[0]) + 1}`;
+    }
+    
+    return "updated grid";
+  };
+
+  useEffect(() => {
+    if (isUndoRedoActionRef.current) {
+      isUndoRedoActionRef.current = false;
+      return;
+    }
+    
+    const isScratch = isScratchpadOpenRef.current;
+    const workspaceKey = isScratch ? "scratch" : "main";
+    const historyStack = historyRef.current[workspaceKey];
+    const currentIndex = historyIndexRef.current[workspaceKey];
+
+    const lastState = historyStack[currentIndex];
+    
+    if (JSON.stringify(lastState.gridData) !== JSON.stringify(gridData)) {
+      const desc = generateDiffDescription(lastState.gridData, gridData, activeCellRef.current.r);
+      const newStack = historyStack.slice(0, currentIndex + 1);
+      newStack.push({
+        gridData,
+        activeCell: activeCellRef.current,
+        desc
+      });
+      historyRef.current[workspaceKey] = newStack;
+      historyIndexRef.current[workspaceKey] = newStack.length - 1;
+    }
+  }, [gridData]);
+
   useEffect(() => {
     blocksRef.current = blocks;
   }, [blocks]);
@@ -456,8 +551,153 @@ export default function App() {
     computedAnswersRef.current = computedAnswers;
   }, [computedAnswers]);
 
+  const executeUndo = useCallback(() => {
+    const isScratch = isScratchpadOpenRef.current;
+    const wk = isScratch ? "scratch" : "main";
+    const currentIndex = historyIndexRef.current[wk];
+    const stack = historyRef.current[wk];
+    
+    if (currentIndex > 0) {
+      const prevState = stack[currentIndex - 1];
+      const currState = stack[currentIndex];
+      isUndoRedoActionRef.current = true;
+      setGridData(prevState.gridData);
+      setActiveCell(prevState.activeCell);
+      historyIndexRef.current[wk] = currentIndex - 1;
+      const diffDesc = generateDiffDescription(currState.gridData, prevState.gridData, prevState.activeCell.r, true);
+      speakText(`Undo: ${diffDesc}`);
+    } else {
+      speakText("Nothing to undo");
+    }
+  }, [speakText]);
+
+  const executeRedo = useCallback(() => {
+    const isScratch = isScratchpadOpenRef.current;
+    const wk = isScratch ? "scratch" : "main";
+    const currentIndex = historyIndexRef.current[wk];
+    const stack = historyRef.current[wk];
+
+    if (currentIndex < stack.length - 1) {
+      const nextState = stack[currentIndex + 1];
+      isUndoRedoActionRef.current = true;
+      setGridData(nextState.gridData);
+      setActiveCell(nextState.activeCell);
+      historyIndexRef.current[wk] = currentIndex + 1;
+      speakText(`Redo: ${nextState.desc}`);
+    } else {
+      speakText("Nothing to redo");
+    }
+  }, [speakText]);
+
+  const executeEvaluateMath = useCallback(() => {
+    const activeR = activeCellRef.current.r;
+    let currentBlock = blocksRef.current.find(
+      (b) =>
+        b.r === activeR &&
+        activeCellRef.current.c >= b.minC - 1 &&
+        activeCellRef.current.c <= b.maxC + 1,
+    );
+
+    if (!currentBlock) {
+      const lineBlocks = blocksRef.current
+        .filter((b) => b.r === activeR)
+        .sort((a, b) => a.minC - b.minC);
+      if (lineBlocks.length > 0) {
+        currentBlock = {
+          text: lineBlocks.map((b) => b.text).join(""),
+          maxC: lineBlocks[lineBlocks.length - 1].maxC,
+        } as any;
+      }
+    }
+
+    if (currentBlock) {
+      try {
+        let textToEvalOrig = currentBlock.text;
+
+        const tryEval = (text: string) => {
+          let t = text
+            .replace(/×/g, "*")
+            .replace(/÷/g, "/")
+            .replace(/√/g, "sqrt")
+            .replace(/π/g, "pi")
+            .replace(/∑/g, "sum")
+            .replace(/=/g, "");
+          if (t.trim() === "") throw new Error("Empty expression");
+          const res = evaluate(t);
+          return typeof res === "number" && !Number.isInteger(res)
+            ? Number(res.toFixed(4))
+            : res;
+        };
+
+        let formattedResult = null;
+        let success = false;
+        let lastErr = null;
+
+        if (textToEvalOrig.includes("=")) {
+          const parts = textToEvalOrig.split("=");
+          try {
+            formattedResult = tryEval(parts[0]);
+            success = true;
+          } catch (e: any) {
+            lastErr = e;
+          }
+
+          if (!success && parts.length > 1) {
+            try {
+              formattedResult = tryEval(parts[1]);
+              success = true;
+            } catch (e: any) {
+              lastErr = e;
+            }
+          }
+        }
+
+        if (!success) {
+          try {
+            formattedResult = tryEval(textToEvalOrig);
+            success = true;
+          } catch (e: any) {
+            lastErr = e;
+          }
+        }
+
+        if (!success) {
+          throw lastErr || new Error("Invalid expression");
+        }
+
+        const msg = `Evaluates to: ${formattedResult}`;
+        setComputeStatus(msg);
+        setComputedAnswers((prev) => [
+          ...prev.filter((a) => a.r !== activeR),
+          {
+            id: Date.now().toString(),
+            text: `=${formattedResult}`,
+            r: activeR,
+            c: Math.max(activeCellRef.current.c, currentBlock!.maxC + 1),
+            type: "success",
+          },
+        ]);
+        speakText(msg);
+      } catch (err: any) {
+        const msg = `Compute error: ${err.message}`;
+        setComputeStatus(msg);
+        setComputedAnswers((prev) => [
+          ...prev.filter((a) => a.r !== activeR),
+          {
+            id: Date.now().toString(),
+            text: err.message,
+            r: activeR,
+            c: Math.max(activeCellRef.current.c, currentBlock!.maxC + 1),
+            type: "error",
+          },
+        ]);
+        speakText(msg);
+        playErrorSound();
+      }
+    }
+  }, [speakText]);
+
   useEffect(() => {
-    isScratchpadOpenRef.current = isScratchpadOpen;
   }, [isScratchpadOpen]);
 
   useEffect(() => {
@@ -556,9 +796,42 @@ export default function App() {
         setIsCommandPaletteOpen((prev) => !prev);
         return;
       }
+      
+      // Undo
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
+        e.preventDefault();
+        executeUndo();
+        return;
+      }
+      
+      // Redo
+      if (
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "z")
+      ) {
+        e.preventDefault();
+        executeRedo();
+        return;
+      }
+
+      // Help Menu
+      if (e.altKey && e.key.toLowerCase() === "h") {
+        e.preventDefault();
+        setIsHelpMenuOpen((prev) => !prev);
+        return;
+      }
+
+      // Toggle Scratchpad (Rough Work)
+      if (e.altKey && e.key.toLowerCase() === "r") {
+        e.preventDefault();
+        toggleScratchpad();
+        return;
+      }
+
       if (
         e.key === "Escape" &&
         !isCommandPaletteOpen &&
+        !isHelpMenuOpen &&
         isScratchpadOpenRef.current
       ) {
         e.preventDefault();
@@ -587,15 +860,16 @@ export default function App() {
         }
       }
 
-      // Allow normal typing if focused on an input when palette is closed
+      // Allow normal typing if focused on an input when palette/help is closed
       if (
         !isCommandPaletteOpen &&
+        !isHelpMenuOpen &&
         activeTag === "input" &&
         activeId !== "grid-input"
       )
         return;
 
-      if (!isCommandPaletteOpen) {
+      if (!isCommandPaletteOpen && !isHelpMenuOpen) {
         if (
           e.altKey &&
           (e.key === "ArrowUp" ||
@@ -771,121 +1045,14 @@ export default function App() {
           }
         } else if (e.key === "=" && (e.ctrlKey || e.metaKey)) {
           e.preventDefault();
-          const activeR = activeCellRef.current.r;
-          let currentBlock = blocksRef.current.find(
-            (b) =>
-              b.r === activeR &&
-              activeCellRef.current.c >= b.minC - 1 &&
-              activeCellRef.current.c <= b.maxC + 1,
-          );
-
-          if (!currentBlock) {
-            const lineBlocks = blocksRef.current
-              .filter((b) => b.r === activeR)
-              .sort((a, b) => a.minC - b.minC);
-            if (lineBlocks.length > 0) {
-              currentBlock = {
-                text: lineBlocks.map((b) => b.text).join(""),
-                maxC: lineBlocks[lineBlocks.length - 1].maxC,
-              } as any;
-            }
-          }
-
-          if (currentBlock) {
-            try {
-              let textToEvalOrig = currentBlock.text;
-
-              const tryEval = (text: string) => {
-                let t = text
-                  .replace(/×/g, "*")
-                  .replace(/÷/g, "/")
-                  .replace(/√/g, "sqrt")
-                  .replace(/π/g, "pi")
-                  .replace(/∑/g, "sum")
-                  .replace(/=/g, "");
-                if (t.trim() === "") throw new Error("Empty expression");
-                const res = evaluate(t);
-                return typeof res === "number" && !Number.isInteger(res)
-                  ? Number(res.toFixed(4))
-                  : res;
-              };
-
-              let formattedResult = null;
-              let success = false;
-              let lastErr = null;
-
-              if (textToEvalOrig.includes("=")) {
-                const parts = textToEvalOrig.split("=");
-                // try left side
-                try {
-                  formattedResult = tryEval(parts[0]);
-                  success = true;
-                } catch (e: any) {
-                  lastErr = e;
-                }
-
-                // if left side failed, try right side
-                if (!success && parts.length > 1) {
-                  try {
-                    formattedResult = tryEval(parts[1]);
-                    success = true;
-                  } catch (e: any) {
-                    lastErr = e;
-                  }
-                }
-              }
-
-              // if still not success, try whole string
-              if (!success) {
-                try {
-                  formattedResult = tryEval(textToEvalOrig);
-                  success = true;
-                } catch (e: any) {
-                  lastErr = e;
-                }
-              }
-
-              if (!success) {
-                throw lastErr || new Error("Invalid expression");
-              }
-
-              const msg = `Evaluates to: ${formattedResult}`;
-              setComputeStatus(msg);
-              setComputedAnswers((prev) => [
-                ...prev.filter((a) => a.r !== activeR),
-                {
-                  id: Date.now().toString(),
-                  text: `=${formattedResult}`, // No space so it looks continuous or maybe keeping '=' and numbers
-                  r: activeR,
-                  c: Math.max(activeCellRef.current.c, currentBlock.maxC + 1),
-                  type: "success",
-                },
-              ]);
-              speakText(msg);
-            } catch (err: any) {
-              const msg = `Compute error: ${err.message}`;
-              setComputeStatus(msg);
-              setComputedAnswers((prev) => [
-                ...prev.filter((a) => a.r !== activeR),
-                {
-                  id: Date.now().toString(),
-                  text: err.message,
-                  r: activeR,
-                  c: Math.max(activeCellRef.current.c, currentBlock.maxC + 1),
-                  type: "error",
-                },
-              ]);
-              speakText(msg);
-              playErrorSound();
-            }
-          }
+          executeEvaluateMath();
         }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isCommandPaletteOpen, toggleScratchpad]);
+  }, [isCommandPaletteOpen, isHelpMenuOpen, toggleScratchpad]);
 
   useEffect(() => {
     if (isCommandPaletteOpen) {
@@ -1042,6 +1209,57 @@ export default function App() {
     setActiveCell((prev) => ({ ...prev, c: prev.c + 1 }));
     setIsCommandPaletteOpen(false);
   };
+
+  const handleHelpMenuKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const item = HELP_MENU_ITEMS[helpMenuSelectedIndex];
+      if (item) {
+        setIsHelpMenuOpen(false);
+        if (item.action === "command_palette") setIsCommandPaletteOpen(true);
+        else if (item.action === "evaluate_math") executeEvaluateMath();
+        else if (item.action === "toggle_scratchpad") toggleScratchpad();
+        else if (item.action === "context_locator") triggerContextLocator();
+        else if (item.action === "undo") executeUndo();
+        else if (item.action === "redo") executeRedo();
+      }
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHelpMenuSelectedIndex((prev) =>
+        prev < HELP_MENU_ITEMS.length - 1 ? prev + 1 : prev,
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHelpMenuSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev));
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setIsHelpMenuOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isHelpMenuOpen && HELP_MENU_ITEMS[helpMenuSelectedIndex]) {
+      speakText(HELP_MENU_ITEMS[helpMenuSelectedIndex].text);
+    }
+  }, [isHelpMenuOpen, helpMenuSelectedIndex, speakText]);
+
+  useEffect(() => {
+    if (isHelpMenuOpen) {
+      setHelpMenuSelectedIndex(0);
+      setTimeout(() => helpMenuInputRef.current?.focus(), 50);
+    }
+  }, [isHelpMenuOpen]);
+
+  useEffect(() => {
+    if (isHelpMenuOpen && helpMenuRef.current) {
+      const selectedEl = helpMenuRef.current.children[
+        helpMenuSelectedIndex
+      ] as HTMLElement;
+      if (selectedEl) {
+        selectedEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+    }
+  }, [helpMenuSelectedIndex, isHelpMenuOpen]);
 
   const handlePaletteKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "ArrowDown") {
@@ -1657,6 +1875,84 @@ export default function App() {
                 })}
               </div>
             )}
+          </div>
+        </div>
+      )}
+      {/* Help Menu Overlay */}
+      {isHelpMenuOpen && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] sm:pt-[15vh] bg-[#112a3d]/60 backdrop-blur-sm p-4">
+          <div
+            className="absolute inset-0"
+            onClick={() => setIsHelpMenuOpen(false)}
+          />
+          <div className="relative w-full max-w-2xl bg-[#ffffff] rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[70vh]">
+            <div className="flex items-center px-4 md:px-6 border-b border-gray-100 bg-white">
+              <input
+                ref={helpMenuInputRef}
+                onKeyDown={handleHelpMenuKeyDown}
+                placeholder="Help Menu: Use arrows to navigate, Enter to execute"
+                className="flex-1 py-5 md:py-6 bg-transparent outline-none text-gray-800 text-lg md:text-xl placeholder-gray-400 font-sans tracking-wide"
+                readOnly
+              />
+              <button
+                onClick={() => {
+                  if (HELP_MENU_ITEMS[helpMenuSelectedIndex]) {
+                    speakText(HELP_MENU_ITEMS[helpMenuSelectedIndex].text);
+                  }
+                }}
+                className="mr-3 p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                title="Repeat voice output"
+              >
+                <Volume2 size={20} />
+              </button>
+              <kbd className="hidden sm:inline-block bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-xs font-mono text-gray-400 ml-1">
+                ESC
+              </kbd>
+            </div>
+
+            <div
+              ref={helpMenuRef}
+              className="flex-1 overflow-y-auto py-2 bg-gray-50/50"
+            >
+              {HELP_MENU_ITEMS.map((item, index) => {
+                const isSelected = index === helpMenuSelectedIndex;
+                return (
+                  <button
+                    key={item.action + index}
+                    onClick={() => {
+                      setIsHelpMenuOpen(false);
+                      if (item.action === "command_palette") setIsCommandPaletteOpen(true);
+                      else if (item.action === "evaluate_math") executeEvaluateMath();
+                      else if (item.action === "toggle_scratchpad") toggleScratchpad();
+                      else if (item.action === "context_locator") triggerContextLocator();
+                      else if (item.action === "undo") executeUndo();
+                      else if (item.action === "redo") executeRedo();
+                    }}
+                    onMouseEnter={() => setHelpMenuSelectedIndex(index)}
+                    className={`w-full flex items-center justify-between px-4 md:px-6 py-3 text-left transition-all outline-none border-l-4
+                             ${isSelected ? "bg-white border-blue-500 shadow-sm" : "border-transparent hover:bg-gray-100/50"}
+                          `}
+                  >
+                    <div className="flex flex-col gap-1">
+                      <span className={`text-[15px] md:text-[16px] tracking-wide ${isSelected ? "text-blue-900 font-medium" : "text-gray-600"}`}>
+                        {item.name}
+                      </span>
+                      <span className="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-0.5 rounded w-fit text-left">
+                        {item.shortcut}
+                      </span>
+                    </div>
+                    {isSelected && (
+                      <span className="hidden sm:flex text-xs text-blue-500 items-center gap-2">
+                        Press{" "}
+                        <kbd className="bg-blue-50 border border-blue-200 shadow-sm rounded-md px-2 py-1 uppercase tracking-wider text-[10px] font-bold text-blue-700">
+                          ↵ Enter
+                        </kbd>
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
