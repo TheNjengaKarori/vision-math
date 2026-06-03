@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Search, Calculator, Volume2, Save, FilePlus } from "lucide-react";
+import { Search, Calculator, Volume2, Save, FilePlus, X } from "lucide-react";
 import { evaluate } from "mathjs";
+import { TeacherFeedView } from "./components/TeacherFeedView";
 
 const playErrorSound = () => {
   try {
@@ -132,6 +133,198 @@ const playScratchpadCloseSound = () => {
   }
 };
 
+const playAlertSound = () => {
+  try {
+    const audioCtx = new (
+      window.AudioContext || (window as any).webkitAudioContext
+    )();
+    
+    // Tone 1
+    const osc1 = audioCtx.createOscillator();
+    const gain1 = audioCtx.createGain();
+    osc1.type = "sine";
+    osc1.frequency.setValueAtTime(300, audioCtx.currentTime);
+    gain1.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+    osc1.connect(gain1);
+    gain1.connect(audioCtx.destination);
+    osc1.start();
+    osc1.stop(audioCtx.currentTime + 0.15);
+
+    // Tone 2
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.type = "sine";
+    osc2.frequency.setValueAtTime(450, audioCtx.currentTime + 0.15);
+    gain2.gain.setValueAtTime(0.3, audioCtx.currentTime + 0.15);
+    gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+    osc2.connect(gain2);
+    gain2.connect(audioCtx.destination);
+    osc2.start(audioCtx.currentTime + 0.15);
+    osc2.stop(audioCtx.currentTime + 0.35);
+  } catch (err) {
+    console.error("Audio API not supported", err);
+  }
+};
+
+const playBellSound = () => {
+  try {
+    const audioCtx = new (
+      window.AudioContext || (window as any).webkitAudioContext
+    )();
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 1);
+    
+    gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
+    
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    osc.start();
+    osc.stop(audioCtx.currentTime + 1);
+  } catch (e) {
+    console.error("Audio API not supported", e);
+  }
+};
+
+const playDoorbellSound = () => {
+  try {
+    const audioCtx = new (
+      window.AudioContext || (window as any).webkitAudioContext
+    )();
+    
+    // Ding
+    const osc1 = audioCtx.createOscillator();
+    const gain1 = audioCtx.createGain();
+    osc1.type = "sine";
+    osc1.frequency.setValueAtTime(659.25, audioCtx.currentTime); // E5
+    gain1.gain.setValueAtTime(0.5, audioCtx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+    osc1.connect(gain1);
+    gain1.connect(audioCtx.destination);
+    osc1.start(audioCtx.currentTime);
+    osc1.stop(audioCtx.currentTime + 0.5);
+
+    // Dong
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.type = "sine";
+    osc2.frequency.setValueAtTime(523.25, audioCtx.currentTime + 0.4); // C5
+    gain2.gain.setValueAtTime(0.5, audioCtx.currentTime + 0.4);
+    gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.0);
+    osc2.connect(gain2);
+    gain2.connect(audioCtx.destination);
+    osc2.start(audioCtx.currentTime + 0.4);
+    osc2.stop(audioCtx.currentTime + 1.0);
+  } catch (e) {
+    console.error("Audio API not supported", e);
+  }
+};
+
+const playWhooshLockSound = () => {
+  try {
+    const audioCtx = new (
+      window.AudioContext || (window as any).webkitAudioContext
+    )();
+    
+    // Whoosh
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.15);
+    gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+    
+    // Lock click
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.type = "square";
+    osc2.frequency.setValueAtTime(800, audioCtx.currentTime + 0.3);
+    gain2.gain.setValueAtTime(0, audioCtx.currentTime + 0.3);
+    gain2.gain.setValueAtTime(0.5, audioCtx.currentTime + 0.31);
+    gain2.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.35);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.3);
+
+    osc2.connect(gain2);
+    gain2.connect(audioCtx.destination);
+    osc2.start(audioCtx.currentTime + 0.3);
+    osc2.stop(audioCtx.currentTime + 0.35);
+  } catch (e) {
+    console.error("Audio API not supported", e);
+  }
+};
+
+const playWhooshUnlockSound = () => {
+  try {
+    const audioCtx = new (
+      window.AudioContext || (window as any).webkitAudioContext
+    )();
+    
+    // Unlock click
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.type = "square";
+    osc2.frequency.setValueAtTime(600, audioCtx.currentTime);
+    gain2.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain2.gain.setValueAtTime(0.5, audioCtx.currentTime + 0.01);
+    gain2.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.05);
+
+    // Whoosh up
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(100, audioCtx.currentTime + 0.05);
+    osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.35);
+    gain.gain.setValueAtTime(0, audioCtx.currentTime + 0.05);
+    gain.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.2);
+    gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.35);
+    
+    osc2.connect(gain2);
+    gain2.connect(audioCtx.destination);
+    osc2.start(audioCtx.currentTime);
+    osc2.stop(audioCtx.currentTime + 0.05);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(audioCtx.currentTime + 0.05);
+    osc.stop(audioCtx.currentTime + 0.35);
+  } catch (e) {
+    console.error("Audio API not supported", e);
+  }
+};
+
+const playPingSound = () => {
+  try {
+    const audioCtx = new (
+      window.AudioContext || (window as any).webkitAudioContext
+    )();
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+    osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.5); // A4
+    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.5);
+  } catch (e) {
+    console.error("Audio API not supported", e);
+  }
+};
+
 const MATH_SYMBOLS = [
   { symbol: "0", name: "Zero Number" },
   { symbol: "1", name: "One Number" },
@@ -172,6 +365,16 @@ const MATH_SYMBOLS = [
   { symbol: "ln", name: "Natural Log / ln function" },
   { symbol: ".", name: "Decimal / Period Punctuation" },
   { symbol: ",", name: "Comma Punctuation" },
+  {
+    symbol: "🙋‍♂️",
+    name: "Raise Hand (Queue)",
+    action: "raise_hand",
+  },
+  {
+    symbol: "📡",
+    name: "Broadcast Line (Type 'bbb')",
+    action: "broadcast_line",
+  },
   {
     symbol: "📝",
     name: "Toggle Scratchpad (Type 'rrr')",
@@ -221,11 +424,13 @@ const NEMETH_DICT = [
 const HELP_MENU_ITEMS = [
   { name: "Command Palette", shortcut: "Ctrl + M", text: "To open the command palette: Control, M", action: "command_palette" },
   { name: "Evaluate Math", shortcut: "Ctrl + =", text: "To evaluate math: Control, Equals", action: "evaluate_math" },
-  { name: "Toggle Scratchpad (Rough Work)", shortcut: "Alt + R", text: "To open rough work: Alt, R", action: "toggle_scratchpad" },
+  { name: "Raise Hand (Queue)", shortcut: "H H H", text: "To raise hand: press H three times quickly", action: "raise_hand" },
+  { name: "Broadcast Line", shortcut: "B B B", text: "To broadcast line: press B three times quickly", action: "broadcast_line" },
+  { name: "Toggle Scratchpad (Rough Work)", shortcut: "Alt / Opt + R", text: "To open rough work: Alt or Option, R", action: "toggle_scratchpad" },
   { name: "Where Am I? Context Locator", shortcut: "Double Shift", text: "For context locator: Double-click Shift", action: "context_locator" },
-  { name: "Undo", shortcut: "Ctrl + Z", text: "To undo: Control, Z", action: "undo" },
-  { name: "Redo", shortcut: "Ctrl + Y", text: "To redo: Control, Y", action: "redo" },
-  { name: "Help Menu", shortcut: "Alt + H", text: "To open this help menu: Alt, H", action: "help_menu" },
+  { name: "Undo", shortcut: "Ctrl / Cmd + Z", text: "To undo: Control or Command, Z", action: "undo" },
+  { name: "Redo", shortcut: "Ctrl / Cmd + Y", text: "To redo: Control or Command, Y", action: "redo" },
+  { name: "Help Menu", shortcut: "Shift + ?", text: "To open this help menu: Shift, Question Mark", action: "help_menu" },
 ];
 
 interface MathBlock {
@@ -316,10 +521,35 @@ export default function App() {
   const [gridData, setGridData] = useState<Record<string, string>>({});
   const [bgType, setBgType] = useState<"grid" | "blank">("grid");
 
+  const [currentView, setCurrentView] = useState<"student" | "teacher">("student");
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [missingPingAlert, setMissingPingAlert] = useState(false);
+
   const [isHelpMenuOpen, setIsHelpMenuOpen] = useState(false);
   const [helpMenuSelectedIndex, setHelpMenuSelectedIndex] = useState(0);
   const helpMenuRef = useRef<HTMLDivElement>(null);
   const helpMenuInputRef = useRef<HTMLInputElement>(null);
+
+  const [isBroadcastPaletteOpen, setIsBroadcastPaletteOpen] = useState(false);
+  const [broadcastSelectedIndex, setBroadcastSelectedIndex] = useState(0);
+  const broadcastStudentList = ["Amina", "David Ochieng", "Sarah Njoroge", "John Doe"];
+  const broadcastInputRef = useRef<HTMLInputElement>(null);
+  const broadcastRef = useRef<HTMLDivElement>(null);
+  const [broadcastReply, setBroadcastReply] = useState<{ student: string, lineText: string, mockFeedback: string } | null>(null);
+
+  interface RaisedHand {
+    id: string;
+    name: string;
+    timestamp: string;
+    currentLineText?: string;
+  }
+  const [queue, setQueue] = useState<RaisedHand[]>([
+    { id: "mock_1", name: "Amina Hassan", timestamp: "5 mins ago", currentLineText: "3x - 6 = 9" },
+    { id: "mock_2", name: "Brian Ochieng", timestamp: "2 mins ago", currentLineText: "y = 3" }
+  ]);
+  const [teacherReadyAlert, setTeacherReadyAlert] = useState<boolean>(false);
+
+  // Moved useEffect below speakText
 
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [paletteSearch, setPaletteSearch] = useState("");
@@ -390,6 +620,12 @@ export default function App() {
   const consecutiveShiftCount = useRef(0);
   const lastShiftPressTime = useRef(0);
 
+  const consecutiveHCount = useRef(0);
+  const lastHPressTime = useRef(0);
+
+  const consecutiveBCount = useRef(0);
+  const lastBPressTime = useRef(0);
+
   const startNewLesson = () => {
     setGridData({});
     setBlocks([]);
@@ -412,6 +648,95 @@ export default function App() {
       window.speechSynthesis.speak(utterance);
     }
   }, []);
+
+  useEffect(() => {
+    if (teacherReadyAlert) {
+      playDoorbellSound();
+      speakText("Mrs. Mutuku is ready for you.");
+      setComputeStatus("Mrs. Mutuku is ready for you.");
+      setTeacherReadyAlert(false);
+    }
+  }, [teacherReadyAlert, speakText]);
+
+  const executeRaiseHand = useCallback(() => {
+    const currentR = activeCellRef.current.r;
+    const currentLineText = Object.keys(gridDataRef.current)
+        .filter(key => key.startsWith(`${currentR},`))
+        .sort((a,b) => parseInt(a.split(',')[1]) - parseInt(b.split(',')[1]))
+        .map(key => gridDataRef.current[key])
+        .join("");
+
+    setQueue(prev => {
+        if (prev.find(q => q.id === "student_1")) {
+            speakText("Hand is already raised.");
+            return prev;
+        }
+        const newQueue = [...prev, { id: "student_1", name: "Kelvin Mwangi", timestamp: "Just now", currentLineText }];
+        playBellSound();
+        speakText(`Hand raised. You are number ${newQueue.length} in the queue.`);
+        setComputeStatus(`Hand raised. Queue position: ${newQueue.length}`);
+        return newQueue;
+    });
+  }, [speakText]);
+
+  const simulateBroadcastReply = useCallback((student: string) => {
+    const r = activeCellRef.current.r;
+    let lineText = "";
+    Object.keys(gridDataRef.current)
+        .filter(key => key.startsWith(`${r},`))
+        .sort((a,b) => parseInt(a.split(',')[1]) - parseInt(b.split(',')[1]))
+        .forEach(key => lineText += gridDataRef.current[key]);
+    lineText = lineText.trim() || "(Empty line)";
+
+    setIsBroadcastPaletteOpen(false);
+    speakText(`Sent line to ${student}.`);
+    setComputeStatus(`Sent line to ${student}.`);
+    
+    setTimeout(() => {
+      playDoorbellSound();
+      speakText(`Received reply from ${student} in rough work. Click the reply button to view.`);
+      setComputeStatus(`Received reply from ${student} in rough work.`);
+      setBroadcastReply({
+        student,
+        lineText,
+        mockFeedback: student === "Amina"
+          ? "Hey I think you missed a negative sign when moving the 4 over"
+          : "Are you sure that's simplified? Try multiplying both sides by 2."
+      });
+    }, 8000);
+  }, [speakText]);
+
+  const openBroadcastDialog = useCallback(() => {
+    setIsBroadcastPaletteOpen(true);
+    setBroadcastSelectedIndex(0);
+    speakText("Ask who? Use arrows to scroll through classmates.");
+    setComputeStatus("Broadcast line. Ask who?");
+  }, [speakText]);
+
+  useEffect(() => {
+    if (missingPingAlert) {
+      playPingSound();
+      speakText("Reminder: Please submit your assignment.");
+      setComputeStatus("Reminder: Please submit your assignment.");
+      setMissingPingAlert(false);
+    }
+  }, [missingPingAlert, speakText]);
+
+  const toggleSubmission = useCallback(() => {
+    setIsSubmitted((prev) => {
+      const next = !prev;
+      if (next) {
+        playWhooshLockSound();
+        speakText("Assignment submitted successfully. Entering read-only mode.");
+        setComputeStatus("Assignment submitted successfully. Entering read-only mode.");
+      } else {
+        playWhooshUnlockSound();
+        speakText("Submission recalled. Editing restored.");
+        setComputeStatus("Submission recalled. Editing restored.");
+      }
+      return next;
+    });
+  }, [speakText]);
 
   const toggleScratchpad = useCallback(() => {
     setIsScratchpadOpen((prev) => {
@@ -588,6 +913,21 @@ export default function App() {
       speakText("Nothing to redo");
     }
   }, [speakText]);
+
+  useEffect(() => {
+    // When Kelvin arrow-keys down to the flagged line:
+    // Web Audio Earcon: A cautious dual-tone alert sound
+    // ARIA Live Announcement: "Line X flagged by teacher. Note: ..."
+    const mockFlag = (window as any).mockFlaggedLine;
+    if (mockFlag && mockFlag.r === activeCell.r) {
+      playAlertSound();
+      const msg = `Line ${activeCell.r + 1} flagged by teacher. Note: ${mockFlag.feedback}. Cloned structure is editable to correct your mistake.`;
+      speakText(msg);
+      setComputeStatus(msg);
+      // Clear after announcing so we don't announce repeatedly endlessly if they stay on it
+      (window as any).mockFlaggedLine = null;
+    }
+  }, [activeCell.r, speakText]);
 
   const executeEvaluateMath = useCallback(() => {
     const activeR = activeCellRef.current.r;
@@ -790,6 +1130,13 @@ export default function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Save/Submit (Ctrl + S or Cmd + S)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        toggleSubmission();
+        return;
+      }
+
       // Toggle Command Palette with Ctrl+M or Cmd+M
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "m") {
         e.preventDefault();
@@ -800,6 +1147,7 @@ export default function App() {
       // Undo
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
         e.preventDefault();
+        if (isSubmitted) return;
         executeUndo();
         return;
       }
@@ -810,19 +1158,99 @@ export default function App() {
         ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "z")
       ) {
         e.preventDefault();
+        if (isSubmitted) return;
         executeRedo();
         return;
       }
 
-      // Help Menu
-      if (e.altKey && e.key.toLowerCase() === "h") {
-        e.preventDefault();
-        setIsHelpMenuOpen((prev) => !prev);
-        return;
+      // Raise Hand (Queue System)
+      if (e.key.toLowerCase() === "h") {
+        const now = Date.now();
+        if (now - lastHPressTime.current < 500) {
+          consecutiveHCount.current += 1;
+        } else {
+          consecutiveHCount.current = 1;
+        }
+        lastHPressTime.current = now;
+
+        if (consecutiveHCount.current === 3) {
+          e.preventDefault();
+          consecutiveHCount.current = 0;
+          
+          setGridData((prev) => {
+            const newData = { ...prev };
+            const r = activeCellRef.current.r;
+            const c = activeCellRef.current.c;
+            let deletedCount = 0;
+            if (newData[`${r},${c-1}`]?.toLowerCase() === "h") {
+                delete newData[`${r},${c-1}`];
+                delete gridDataRef.current[`${r},${c-1}`];
+                deletedCount++;
+            }
+            if (newData[`${r},${c-2}`]?.toLowerCase() === "h") {
+                delete newData[`${r},${c-2}`];
+                delete gridDataRef.current[`${r},${c-2}`];
+                deletedCount++;
+            }
+            if (deletedCount > 0) {
+                setActiveCell({ r, c: Math.max(0, c - deletedCount) });
+                activeCellRef.current = { r, c: Math.max(0, c - deletedCount) };
+            }
+            return newData;
+          });
+
+          executeRaiseHand();
+          return;
+        }
+      } else if (e.key !== "Escape" && e.key !== "Shift" && !e.key?.startsWith("Arrow") && e.key?.toLowerCase() !== "b") {
+        consecutiveHCount.current = 0;
+      }
+
+      // Broadcast Line System
+      if (e.key.toLowerCase() === "b") {
+        const now = Date.now();
+        if (now - lastBPressTime.current < 500) {
+          consecutiveBCount.current += 1;
+        } else {
+          consecutiveBCount.current = 1;
+        }
+        lastBPressTime.current = now;
+
+        if (consecutiveBCount.current === 3) {
+          e.preventDefault();
+          consecutiveBCount.current = 0;
+          
+          setGridData((prev) => {
+            const newData = { ...prev };
+            const r = activeCellRef.current.r;
+            const c = activeCellRef.current.c;
+            let deletedCount = 0;
+            if (newData[`${r},${c-1}`]?.toLowerCase() === "b") {
+                delete newData[`${r},${c-1}`];
+                delete gridDataRef.current[`${r},${c-1}`];
+                deletedCount++;
+            }
+            if (newData[`${r},${c-2}`]?.toLowerCase() === "b") {
+                delete newData[`${r},${c-2}`];
+                delete gridDataRef.current[`${r},${c-2}`];
+                deletedCount++;
+            }
+            if (deletedCount > 0) {
+                setActiveCell({ r, c: Math.max(0, c - deletedCount) });
+                activeCellRef.current = { r, c: Math.max(0, c - deletedCount) };
+            }
+            return newData;
+          });
+
+          openBroadcastDialog();
+          return;
+        }
+      } else if (e.key !== "Escape" && e.key !== "Shift" && !e.key?.startsWith("Arrow") && e.key?.toLowerCase() !== "h") {
+        consecutiveBCount.current = 0;
       }
 
       // Toggle Scratchpad (Rough Work)
-      if (e.altKey && e.key.toLowerCase() === "r") {
+      if (e.altKey && e.code === "KeyR") {
         e.preventDefault();
         toggleScratchpad();
         return;
@@ -831,6 +1259,7 @@ export default function App() {
       if (
         e.key === "Escape" &&
         !isCommandPaletteOpen &&
+        !isBroadcastPaletteOpen &&
         !isHelpMenuOpen &&
         isScratchpadOpenRef.current
       ) {
@@ -864,12 +1293,13 @@ export default function App() {
       if (
         !isCommandPaletteOpen &&
         !isHelpMenuOpen &&
+        !isBroadcastPaletteOpen &&
         activeTag === "input" &&
         activeId !== "grid-input"
       )
         return;
 
-      if (!isCommandPaletteOpen && !isHelpMenuOpen) {
+      if (!isCommandPaletteOpen && !isHelpMenuOpen && !isBroadcastPaletteOpen) {
         if (
           e.altKey &&
           (e.key === "ArrowUp" ||
@@ -898,6 +1328,7 @@ export default function App() {
           return;
         } else if (e.key === "Enter" && e.shiftKey) {
           e.preventDefault();
+          if (isSubmitted) return;
           const currentRow = activeCellRef.current.r;
           const newRow = currentRow + 1;
 
@@ -1045,6 +1476,7 @@ export default function App() {
           }
         } else if (e.key === "=" && (e.ctrlKey || e.metaKey)) {
           e.preventDefault();
+          if (isSubmitted) return;
           executeEvaluateMath();
         }
       }
@@ -1052,7 +1484,7 @@ export default function App() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isCommandPaletteOpen, isHelpMenuOpen, toggleScratchpad]);
+  }, [isCommandPaletteOpen, isHelpMenuOpen, isBroadcastPaletteOpen, toggleScratchpad, isSubmitted]);
 
   useEffect(() => {
     if (isCommandPaletteOpen) {
@@ -1102,6 +1534,7 @@ export default function App() {
   const rowsList = Array.from({ length: maxRowIndex + 1 }).map((_, i) => i);
 
   const handleCellChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isSubmitted) return;
     const val = e.target.value.slice(-1);
 
     if (val === "") {
@@ -1156,6 +1589,14 @@ export default function App() {
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (isSubmitted) {
+      if (e.key === "Backspace") {
+        e.preventDefault();
+        setActiveCell((prev) => ({ ...prev, c: Math.max(0, prev.c - 1) }));
+      }
+      return;
+    }
+
     if (e.key.toLowerCase() === "r") {
       const now = Date.now();
       if (now - lastRPressTime.current < 500) {
@@ -1218,6 +1659,7 @@ export default function App() {
         setIsHelpMenuOpen(false);
         if (item.action === "command_palette") setIsCommandPaletteOpen(true);
         else if (item.action === "evaluate_math") executeEvaluateMath();
+        else if (item.action === "raise_hand") executeRaiseHand();
         else if (item.action === "toggle_scratchpad") toggleScratchpad();
         else if (item.action === "context_locator") triggerContextLocator();
         else if (item.action === "undo") executeUndo();
@@ -1251,6 +1693,30 @@ export default function App() {
   }, [isHelpMenuOpen]);
 
   useEffect(() => {
+    if (isBroadcastPaletteOpen) {
+      setBroadcastSelectedIndex(0);
+      setTimeout(() => broadcastInputRef.current?.focus(), 50);
+    }
+  }, [isBroadcastPaletteOpen]);
+
+  useEffect(() => {
+    if (isBroadcastPaletteOpen && broadcastStudentList[broadcastSelectedIndex]) {
+      speakText(broadcastStudentList[broadcastSelectedIndex]);
+    }
+  }, [isBroadcastPaletteOpen, broadcastSelectedIndex, speakText]);
+
+  useEffect(() => {
+    if (isBroadcastPaletteOpen && broadcastRef.current) {
+      const selectedEl = broadcastRef.current.children[
+        broadcastSelectedIndex
+      ] as HTMLElement;
+      if (selectedEl) {
+        selectedEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+    }
+  }, [broadcastSelectedIndex, isBroadcastPaletteOpen]);
+
+  useEffect(() => {
     if (isHelpMenuOpen && helpMenuRef.current) {
       const selectedEl = helpMenuRef.current.children[
         helpMenuSelectedIndex
@@ -1281,7 +1747,13 @@ export default function App() {
       e.preventDefault();
       const item = filteredSymbols[paletteSelectedIndex];
       if (item) {
-        if ((item as any).action === "toggle_scratchpad") {
+        if ((item as any).action === "raise_hand") {
+          setIsCommandPaletteOpen(false);
+          executeRaiseHand();
+        } else if ((item as any).action === "broadcast_line") {
+          setIsCommandPaletteOpen(false);
+          openBroadcastDialog();
+        } else if ((item as any).action === "toggle_scratchpad") {
           setIsCommandPaletteOpen(false);
           toggleScratchpad();
         } else if ((item as any).action === "context_locator") {
@@ -1311,6 +1783,34 @@ export default function App() {
     }
   };
 
+  if (currentView === "teacher") {
+    return (
+      <TeacherFeedView
+        queue={queue}
+        onTeacherReady={(studentId) => {
+          setQueue((prev) => prev.filter((q) => q.id !== studentId));
+          if (studentId === "student_1") {
+            setTeacherReadyAlert(true);
+          }
+        }}
+        onPingMissing={() => setMissingPingAlert(true)}
+        onBackToStudent={() => setCurrentView("student")}
+        onMockFeedbackGiven={(submissionId, lineId, feedback) => {
+          // This simulates receiving feedback from the teacher
+          setTimeout(() => {
+            speakText(`Niaje Kelvin! You have 1 review from Mrs. Mutuku on Algebraic Linear Equations. Press Enter to open.`);
+            setComputeStatus("New feedback received from teacher.");
+            // Store simple mock flag just to demonstrate the loop later
+            (window as any).mockFlaggedLine = {
+              r: parseInt(lineId.replace("L", "")) - 1, // basic mock map to row
+              feedback: feedback,
+            };
+          }, 1000);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col h-screen overflow-hidden font-sans select-none relative bg-[#ffffff]">
       <div aria-live="polite" className="sr-only">
@@ -1323,7 +1823,15 @@ export default function App() {
       </div>
       <div className="relative z-10 flex flex-col pointer-events-auto shadow-md">
         {/* Status Bar */}
-        <div className="flex justify-between items-center px-4 py-1.5 bg-[#163e5b] text-[#b4c9da] text-xs font-semibold h-[24px]"></div>
+        <div className="flex justify-start items-center px-4 py-1.5 bg-[#163e5b] text-[#b4c9da] text-xs font-semibold h-[24px]">
+            <button
+              onClick={() => setCurrentView("teacher")}
+              className="flex items-center gap-1.5 px-2 py-0.5 ml-8 rounded-sm bg-blue-500/10 hover:bg-blue-500/30 border border-blue-400/20 hover:border-blue-400/50 text-[10px] uppercase tracking-wider font-bold transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-1 focus:ring-white/20"
+              title="Open Teacher Feed View"
+            >
+              Teacher View
+            </button>
+        </div>
 
         <div className="flex justify-between items-center h-14 bg-[#163e5b] text-white px-2 border-b-2 border-transparent relative z-20">
           <div className="flex flex-1 items-center">
@@ -1347,6 +1855,7 @@ export default function App() {
                 type="text"
                 value={className}
                 onChange={(e) => setClassName(e.target.value)}
+                readOnly={isSubmitted}
                 className="bg-transparent outline-none w-[70px] sm:w-[90px] border-b border-transparent focus:border-white/50 px-1 py-0.5 rounded cursor-text hover:bg-white/5 transition-colors placeholder-[#b4c9da]/50 flex-shrink-0"
                 placeholder="Class"
               />
@@ -1355,6 +1864,7 @@ export default function App() {
                 type="text"
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
+                readOnly={isSubmitted}
                 className="bg-transparent outline-none w-[45px] sm:w-[50px] border-b border-transparent focus:border-white/50 px-1 py-0.5 rounded cursor-text hover:bg-white/5 transition-colors placeholder-[#b4c9da]/50 text-center flex-shrink-0"
                 placeholder="Year"
               />
@@ -1365,6 +1875,7 @@ export default function App() {
                   type="text"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
+                  readOnly={isSubmitted}
                   className="bg-transparent outline-none w-[80px] sm:w-[100px] border-b border-transparent focus:border-white/50 px-1 py-0.5 rounded cursor-text hover:bg-white/5 transition-colors placeholder-[#b4c9da]/50 uppercase tracking-widest text-[12px] sm:text-[13px] text-[#b4c9da] focus:text-white"
                   placeholder="SUBJECT"
                 />
@@ -1375,6 +1886,7 @@ export default function App() {
                   type="text"
                   value={lesson}
                   onChange={(e) => setLesson(e.target.value)}
+                  readOnly={isSubmitted}
                   className="bg-transparent outline-none min-w-[70px] max-w-[200px] px-2 py-0.5 cursor-text hover:bg-white/10 transition-colors placeholder-white/50 text-center text-white text-[12px] sm:text-[13px] tracking-widest uppercase box-content"
                   style={{ width: `${Math.max(lesson.length, 6) * 1.1}ch` }}
                   placeholder="LESSON"
@@ -1415,13 +1927,23 @@ export default function App() {
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
+                  disabled={isSubmitted}
                   className="absolute inset-0 opacity-0 cursor-pointer w-full z-10"
                 />
               </div>
             </div>
           </div>
 
-          <div className="flex-1 flex justify-center h-14 items-start relative pointer-events-none"></div>
+          <div className="flex-1 flex justify-center h-14 items-start relative pointer-events-none">
+            {broadcastReply && !isScratchpadOpen && (
+              <button
+                onClick={() => toggleScratchpad()}
+                className="mt-2 text-sm font-medium animate-pulse px-4 py-1.5 rounded-full bg-blue-500/20 text-blue-200 border border-blue-400/30 hover:bg-blue-500/30 pointer-events-auto shadow-lg backdrop-blur-md transition-all flex items-center gap-2"
+              >
+                💬 Reply from {broadcastReply.student} (Click to open)
+              </button>
+            )}
+          </div>
 
           <div className="flex-1 flex justify-end gap-2 px-2">
             <button
@@ -1546,6 +2068,7 @@ export default function App() {
                         }
                         onChange={handleCellChange}
                         onKeyDown={handleInputKeyDown}
+                        readOnly={isSubmitted}
                         autoComplete="off"
                         autoFocus
                       />
@@ -1626,13 +2149,39 @@ export default function App() {
               </p>
             </div>
             <div className="flex gap-4 items-center">
-              <kbd className="hidden sm:inline-block bg-white/10 border border-white/10 rounded px-2 py-1 text-[10px] font-mono text-white/70">
+              <button 
+                onClick={toggleScratchpad}
+                className="hidden sm:inline-flex items-center gap-1 bg-white/10 hover:bg-white/20 transition-colors border border-white/10 rounded px-2 py-1 text-[10px] font-mono text-white/70"
+                title="Close Scratchpad (Esc)"
+              >
                 Close
-              </kbd>
+                <span className="text-[9px] opacity-70 border border-white/20 rounded px-1 ml-1 font-sans">Esc</span>
+              </button>
             </div>
           </div>
 
           <div className="flex-1 relative overflow-y-auto">
+            {broadcastReply && (
+              <div className="m-6 mb-2 p-4 rounded-xl bg-blue-900/40 border border-blue-500/20 text-[#b4c9da] shadow-inner">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Peer Reply</div>
+                  <div className="text-sm font-medium text-white">from {broadcastReply.student}</div>
+                  <button 
+                    onClick={() => setBroadcastReply(null)}
+                    className="ml-auto text-blue-400 hover:text-white"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+                <div className="bg-black/20 p-3 rounded-lg font-mono text-center text-xl text-white mb-3 shadow-[inset_0_1px_3px_rgba(0,0,0,0.3)]">
+                  {broadcastReply.lineText}
+                </div>
+                <div className="flex items-start gap-2 bg-blue-500/10 p-3 rounded-lg">
+                  <div className="mt-0.5 text-blue-400">💬</div>
+                  <div className="text-sm leading-relaxed text-blue-100">{broadcastReply.mockFeedback}</div>
+                </div>
+              </div>
+            )}
             <ol className="list-decimal pl-[72px] pr-8 py-8 space-y-4 font-sans text-lg font-bold text-gray-500 marker:text-gray-700">
               {Array.from({ length: maxRowIndex + 1 }).map((_, r) => {
                 const isActiveView = isScratchpadOpen;
@@ -1709,6 +2258,7 @@ export default function App() {
                           }
                           onChange={handleCellChange}
                           onKeyDown={handleInputKeyDown}
+                          readOnly={isSubmitted}
                           autoComplete="off"
                           autoFocus
                         />
@@ -1833,7 +2383,13 @@ export default function App() {
                     <button
                       key={item.symbol + index}
                       onClick={() => {
-                        if ((item as any).action === "toggle_scratchpad") {
+                        if ((item as any).action === "raise_hand") {
+                          setIsCommandPaletteOpen(false);
+                          executeRaiseHand();
+                        } else if ((item as any).action === "broadcast_line") {
+                          setIsCommandPaletteOpen(false);
+                          openBroadcastDialog();
+                        } else if ((item as any).action === "toggle_scratchpad") {
                           setIsCommandPaletteOpen(false);
                           toggleScratchpad();
                         } else if ((item as any).action === "context_locator") {
@@ -1878,6 +2434,80 @@ export default function App() {
           </div>
         </div>
       )}
+      {/* Broadcast Dialog Overlay */}
+      {isBroadcastPaletteOpen && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] sm:pt-[15vh] bg-[#112a3d]/60 backdrop-blur-sm p-4">
+          <div
+            className="absolute inset-0"
+            onClick={() => setIsBroadcastPaletteOpen(false)}
+          />
+          <div className="relative w-full max-w-2xl bg-[#ffffff] rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[70vh]">
+            <div className="flex items-center px-4 md:px-6 border-b border-gray-100 bg-white">
+              <input
+                ref={broadcastInputRef}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    setBroadcastSelectedIndex((prev) => (prev + 1) % broadcastStudentList.length);
+                  } else if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    setBroadcastSelectedIndex((prev) => (prev - 1 + broadcastStudentList.length) % broadcastStudentList.length);
+                  } else if (e.key === "Enter") {
+                    e.preventDefault();
+                    const student = broadcastStudentList[broadcastSelectedIndex];
+                    simulateBroadcastReply(student);
+                  } else if (e.key === "Escape") {
+                    setIsBroadcastPaletteOpen(false);
+                    e.preventDefault();
+                  }
+                }}
+                placeholder="Ask who? Use arrows to select, Enter to send"
+                className="flex-1 py-5 md:py-6 bg-transparent outline-none text-gray-800 text-lg md:text-xl placeholder-gray-400 font-sans tracking-wide"
+                readOnly
+              />
+            </div>
+
+            <div
+              ref={broadcastRef}
+              className="overflow-y-auto no-scrollbar flex-1 bg-gray-50/50 p-2 md:p-3"
+            >
+              {broadcastStudentList.map((student, index) => {
+                const isSelected = index === broadcastSelectedIndex;
+                return (
+                  <button
+                    key={student}
+                    onClick={() => {
+                      simulateBroadcastReply(student);
+                    }}
+                    onMouseEnter={() => setBroadcastSelectedIndex(index)}
+                    className={`w-full text-left px-4 py-4 md:py-5 flex flex-row items-center gap-4 rounded-xl transition-all duration-200 outline-none ${
+                      isSelected
+                        ? "bg-blue-600 text-white shadow-md transform scale-[1.01]"
+                        : "bg-transparent text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className={`text-base md:text-lg font-semibold tracking-wide truncate ${
+                          isSelected ? "text-white" : "text-gray-900"
+                        }`}
+                      >
+                        {student}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {/* Status Footer */}
+            <div className="bg-gray-100 px-4 md:px-6 py-3 md:py-4 border-t border-gray-200 flex justify-between items-center shrink-0">
+              <span className="text-sm tracking-wide text-gray-500 font-medium">Peer-to-Peer Help Broadcast</span>
+              <span className="text-xs tracking-wider text-gray-400 uppercase hidden sm:inline">Use arrows to select</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Help Menu Overlay */}
       {isHelpMenuOpen && (
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] sm:pt-[15vh] bg-[#112a3d]/60 backdrop-blur-sm p-4">
@@ -1923,6 +2553,7 @@ export default function App() {
                       setIsHelpMenuOpen(false);
                       if (item.action === "command_palette") setIsCommandPaletteOpen(true);
                       else if (item.action === "evaluate_math") executeEvaluateMath();
+                      else if (item.action === "raise_hand") executeRaiseHand();
                       else if (item.action === "toggle_scratchpad") toggleScratchpad();
                       else if (item.action === "context_locator") triggerContextLocator();
                       else if (item.action === "undo") executeUndo();
