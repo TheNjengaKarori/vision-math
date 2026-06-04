@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Search, Calculator, Volume2, Save, FilePlus, X } from "lucide-react";
+import { Search, Calculator, Volume2, Save, FilePlus, X, Hand, MessageSquare } from "lucide-react";
 import { evaluate } from "mathjs";
 import { TeacherFeedView } from "./components/TeacherFeedView";
 
@@ -385,6 +385,11 @@ const MATH_SYMBOLS = [
     name: "Where Am I? Context Locator (Double-Click 'Shift')",
     action: "context_locator",
   },
+  {
+    symbol: "👥",
+    name: "Start Group Work",
+    action: "start_group_work",
+  },
 ];
 
 const AUTOCOMPLETE_DICT = [
@@ -422,10 +427,11 @@ const NEMETH_DICT = [
 ];
 
 const HELP_MENU_ITEMS = [
-  { name: "Command Palette", shortcut: "Ctrl + M", text: "To open the command palette: Control, M", action: "command_palette" },
-  { name: "Evaluate Math", shortcut: "Ctrl + =", text: "To evaluate math: Control, Equals", action: "evaluate_math" },
+  { name: "Command Palette", shortcut: "Ctrl / Cmd + M", text: "To open the command palette: Control or Command, M", action: "command_palette" },
+  { name: "Evaluate Math", shortcut: "Ctrl / Cmd + =", text: "To evaluate math: Control or Command, Equals", action: "evaluate_math" },
   { name: "Raise Hand (Queue)", shortcut: "H H H", text: "To raise hand: press H three times quickly", action: "raise_hand" },
   { name: "Broadcast Line", shortcut: "B B B", text: "To broadcast line: press B three times quickly", action: "broadcast_line" },
+  { name: "Pass Control (Group)", shortcut: "Ctrl / Cmd + P", text: "To pass control in group work: Control or Command, P", action: "pass_control" },
   { name: "Toggle Scratchpad (Rough Work)", shortcut: "Alt / Opt + R", text: "To open rough work: Alt or Option, R", action: "toggle_scratchpad" },
   { name: "Where Am I? Context Locator", shortcut: "Double Shift", text: "For context locator: Double-click Shift", action: "context_locator" },
   { name: "Undo", shortcut: "Ctrl / Cmd + Z", text: "To undo: Control or Command, Z", action: "undo" },
@@ -524,6 +530,11 @@ export default function App() {
   const [currentView, setCurrentView] = useState<"student" | "teacher">("student");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [missingPingAlert, setMissingPingAlert] = useState(false);
+  
+  const [isGroupWork, setIsGroupWork] = useState(false);
+  const [hasControl, setHasControl] = useState(true);
+  const [activePeer, setActivePeer] = useState("Amina");
+  const groupWorkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [isHelpMenuOpen, setIsHelpMenuOpen] = useState(false);
   const [helpMenuSelectedIndex, setHelpMenuSelectedIndex] = useState(0);
@@ -636,8 +647,8 @@ export default function App() {
   };
 
   const saveLesson = () => {
-    setComputeStatus("Lesson saved successfully.");
-    // visual feedback will be announced by polite aria-live Region
+    const msg = `${lesson || "Lesson"} saved successfully.`;
+    setComputeStatus(msg);
   };
 
   const speakText = useCallback((text: string) => {
@@ -648,6 +659,15 @@ export default function App() {
       window.speechSynthesis.speak(utterance);
     }
   }, []);
+
+  useEffect(() => {
+    if (isScratchpadOpen && broadcastReply) {
+      // Small delay to let the "Scratchpad open" message finish or interrupt it smoothly
+      setTimeout(() => {
+        speakText(`Peer Reply from ${broadcastReply.student}: ${broadcastReply.lineText}. Note: ${broadcastReply.mockFeedback}`);
+      }, 1000); 
+    }
+  }, [isScratchpadOpen, broadcastReply, speakText]);
 
   useEffect(() => {
     if (teacherReadyAlert) {
@@ -712,6 +732,42 @@ export default function App() {
     speakText("Ask who? Use arrows to scroll through classmates.");
     setComputeStatus("Broadcast line. Ask who?");
   }, [speakText]);
+
+  const toggleGroupWork = useCallback(() => {
+    setIsGroupWork(prev => {
+      if (!prev) {
+        setHasControl(true);
+        setActivePeer("Amina");
+        speakText("Group work started. You have control.");
+        setComputeStatus("Group work started. You have control.");
+        return true;
+      } else {
+        if (groupWorkTimeoutRef.current) clearTimeout(groupWorkTimeoutRef.current);
+        speakText("Group work ended.");
+        setComputeStatus("Group work ended.");
+        setHasControl(true);
+        return false;
+      }
+    });
+  }, [speakText]);
+
+  const passControl = useCallback(() => {
+    if (!isGroupWork || !hasControl) return;
+    setHasControl(false);
+    speakText(`Control passed to ${activePeer}.`);
+    setComputeStatus(`Control passed to ${activePeer}.`);
+    
+    // Simulate peer working and passing control back
+    if (groupWorkTimeoutRef.current) clearTimeout(groupWorkTimeoutRef.current);
+    groupWorkTimeoutRef.current = setTimeout(() => {
+      if (isGroupWork) {
+        setHasControl(true);
+        playDoorbellSound();
+        speakText("You have control.");
+        setComputeStatus("You have control.");
+      }
+    }, 15000); // 15 seconds simulate
+  }, [isGroupWork, hasControl, activePeer, speakText]);
 
   useEffect(() => {
     if (missingPingAlert) {
@@ -1120,13 +1176,29 @@ export default function App() {
     speakText(`Worksheet: ${worksheet}. You are on Line ${currentLine} of ${totalLines}. Focused on column ${currentCol + 1}. ${lineInfo} ${cellInfo}`);
   }, [speakText]);
 
-  const filteredSymbols = MATH_SYMBOLS.filter((s) => {
+  const filteredSymbols = paletteSearch ? MATH_SYMBOLS.filter((s) => {
     const term = paletteSearch.toLowerCase();
     return (
       s.name.toLowerCase().includes(term) ||
       s.symbol.toLowerCase().includes(term)
     );
-  });
+  }) : [
+    { symbol: "√", name: "Square Root function" },
+    { symbol: "π", name: "Pi Constant function" },
+    { symbol: "e", name: "Euler's Number Constant function" },
+    { symbol: "∑", name: "Summation Calculus function" },
+    { symbol: "sin", name: "Sine Trigonometry function" },
+    { symbol: "cos", name: "Cosine Trigonometry function" },
+    { symbol: "tan", name: "Tangent Trigonometry function" },
+    { symbol: "log", name: "Logarithm (Base 10) function" },
+    { symbol: "^", name: "Exponent / Power Operator" },
+    { symbol: "+", name: "Plus / Addition Operator" },
+    { symbol: "-", name: "Minus / Subtraction Operator" },
+    { symbol: "×", name: "Multiply / Times Operator" },
+    { symbol: "÷", name: "Divide Operator" },
+    { symbol: "=", name: "Equals Operator" },
+    { symbol: "🙋‍♂️", name: "Raise Hand (Queue)", action: "raise_hand" },
+  ];
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1137,10 +1209,24 @@ export default function App() {
         return;
       }
 
+      // Toolkit shortcut (Ctrl + K or Cmd + K)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsCommandPaletteOpen(prev => !prev);
+        return;
+      }
+
       // Toggle Command Palette with Ctrl+M or Cmd+M
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "m") {
         e.preventDefault();
         setIsCommandPaletteOpen((prev) => !prev);
+        return;
+      }
+
+      // Pass control with Ctrl+P or Cmd+P
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "p") {
+        e.preventDefault();
+        passControl();
         return;
       }
       
@@ -1510,8 +1596,8 @@ export default function App() {
   }, [isCommandPaletteOpen, selectedSymbolName, speakText]);
 
   const gridStyle = {
-    backgroundColor: "#ffffff",
-    backgroundImage: `linear-gradient(#a7bfd3 1.5px, transparent 1.5px), linear-gradient(90deg, #a7bfd3 1.5px, transparent 1.5px)`,
+    backgroundColor: "transparent",
+    backgroundImage: `linear-gradient(#333 1.5px, transparent 1.5px), linear-gradient(90deg, #333 1.5px, transparent 1.5px)`,
     backgroundSize: "46px 46px",
   };
 
@@ -1664,6 +1750,9 @@ export default function App() {
         else if (item.action === "context_locator") triggerContextLocator();
         else if (item.action === "undo") executeUndo();
         else if (item.action === "redo") executeRedo();
+        else if (item.action === "broadcast_line") openBroadcastDialog();
+        else if (item.action === "pass_control") passControl();
+        else if (item.action === "start_group_work") toggleGroupWork();
       }
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -1728,6 +1817,10 @@ export default function App() {
   }, [helpMenuSelectedIndex, isHelpMenuOpen]);
 
   const handlePaletteKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Tab") {
+      e.preventDefault(); // Prevent tabbing out of the modal, Arrow keys handle navigation
+      return;
+    }
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setPaletteSelectedIndex((prev) => (prev + 1) % filteredSymbols.length);
@@ -1759,6 +1852,9 @@ export default function App() {
         } else if ((item as any).action === "context_locator") {
           setIsCommandPaletteOpen(false);
           triggerContextLocator();
+        } else if ((item as any).action === "start_group_work") {
+          setIsCommandPaletteOpen(false);
+          toggleGroupWork();
         } else {
           insertSymbol(item.symbol);
         }
@@ -1812,7 +1908,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden font-sans select-none relative bg-[#ffffff]">
+    <div className="flex flex-col h-screen overflow-hidden font-sans select-none relative bg-[#0a0a0a]">
       <div aria-live="polite" className="sr-only">
         {suggestion
           ? `Suggestion: ${suggestion.name}. Press Tab to accept.`
@@ -1824,8 +1920,17 @@ export default function App() {
       <div className="relative z-10 flex flex-col pointer-events-auto shadow-md">
         {/* Status Bar */}
         <div className="flex justify-start items-center px-4 py-1.5 bg-[#163e5b] text-[#b4c9da] text-xs font-semibold h-[24px]">
+            {isGroupWork && (
+              <span className={`px-2 py-0.5 rounded-sm text-[10px] uppercase tracking-wider font-bold ${
+                hasControl ? "bg-green-500/20 text-green-300 border border-green-400/30" : "bg-orange-500/20 text-orange-300 border border-orange-400/30"
+              }`}>
+                Group Work: {hasControl ? "You have control" : `Read-Only (${activePeer} has control)`}
+              </span>
+            )}
             <button
               onClick={() => setCurrentView("teacher")}
+              onMouseEnter={() => speakText("Open Teacher View")}
+              onFocus={() => speakText("Open Teacher View")}
               className="flex items-center gap-1.5 px-2 py-0.5 ml-8 rounded-sm bg-blue-500/10 hover:bg-blue-500/30 border border-blue-400/20 hover:border-blue-400/50 text-[10px] uppercase tracking-wider font-bold transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-1 focus:ring-white/20"
               title="Open Teacher Feed View"
             >
@@ -1860,15 +1965,6 @@ export default function App() {
                 placeholder="Class"
               />
               <span className="text-[#316995] font-light flex-shrink-0">/</span>
-              <input
-                type="text"
-                value={year}
-                onChange={(e) => setYear(e.target.value)}
-                readOnly={isSubmitted}
-                className="bg-transparent outline-none w-[45px] sm:w-[50px] border-b border-transparent focus:border-white/50 px-1 py-0.5 rounded cursor-text hover:bg-white/5 transition-colors placeholder-[#b4c9da]/50 text-center flex-shrink-0"
-                placeholder="Year"
-              />
-              <span className="text-[#316995] font-light flex-shrink-0">/</span>
               <div className="flex items-center gap-1.5 flex-shrink-0">
                 <div className="w-1.5 h-1.5 rounded-full border-[1.5px] border-[#f4a261]"></div>
                 <input
@@ -1876,7 +1972,7 @@ export default function App() {
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   readOnly={isSubmitted}
-                  className="bg-transparent outline-none w-[80px] sm:w-[100px] border-b border-transparent focus:border-white/50 px-1 py-0.5 rounded cursor-text hover:bg-white/5 transition-colors placeholder-[#b4c9da]/50 uppercase tracking-widest text-[12px] sm:text-[13px] text-[#b4c9da] focus:text-white"
+                  className="bg-transparent outline-none w-[80px] sm:w-[100px] border-b border-transparent focus:border-white/50 px-1 py-0.5 rounded cursor-text hover:bg-white/5 transition-colors placeholder-white uppercase tracking-widest text-[12px] sm:text-[13px] text-white font-semibold focus:text-white"
                   placeholder="SUBJECT"
                 />
               </div>
@@ -1918,7 +2014,6 @@ export default function App() {
                     return d.toLocaleString("default", {
                       month: "short",
                       day: "numeric",
-                      year: "numeric",
                     });
                   })()}
                 </span>
@@ -1938,16 +2033,29 @@ export default function App() {
             {broadcastReply && !isScratchpadOpen && (
               <button
                 onClick={() => toggleScratchpad()}
-                className="mt-2 text-sm font-medium animate-pulse px-4 py-1.5 rounded-full bg-blue-500/20 text-blue-200 border border-blue-400/30 hover:bg-blue-500/30 pointer-events-auto shadow-lg backdrop-blur-md transition-all flex items-center gap-2"
+                className="mt-2 text-sm font-bold animate-pulse px-4 py-1.5 rounded-full bg-cyan-900/50 text-cyan-300 border border-cyan-400/50 hover:bg-cyan-800/80 hover:text-white pointer-events-auto shadow-[0_0_15px_rgba(34,211,238,0.3)] backdrop-blur-md transition-all flex items-center gap-2"
               >
-                💬 Reply from {broadcastReply.student} (Click to open)
+                <MessageSquare size={16} className="text-cyan-400" />
+                Reply from {broadcastReply.student}
               </button>
             )}
           </div>
 
           <div className="flex-1 flex justify-end gap-2 px-2">
             <button
+              onClick={executeRaiseHand}
+              onMouseEnter={() => speakText("Raise Hand for help")}
+              onFocus={() => speakText("Raise Hand for help")}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-black/20 hover:bg-black/30 border border-transparent hover:border-white/10 text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-2 focus:ring-white/20"
+              title="Raise hand to request help"
+            >
+              <Hand size={16} />
+              <span className="hidden sm:inline">Raise Hand</span>
+            </button>
+            <button
               onClick={startNewLesson}
+              onMouseEnter={() => speakText("Start a new lesson")}
+              onFocus={() => speakText("Start a new lesson")}
               className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-black/20 hover:bg-black/30 border border-transparent hover:border-white/10 text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-2 focus:ring-white/20"
               title="Start a new lesson"
             >
@@ -1956,6 +2064,8 @@ export default function App() {
             </button>
             <button
               onClick={saveLesson}
+              onMouseEnter={() => speakText("Save current lesson")}
+              onFocus={() => speakText("Save current lesson")}
               className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-black/20 hover:bg-black/30 border border-transparent hover:border-white/10 text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-2 focus:ring-white/20"
               title="Save current lesson"
             >
@@ -1964,12 +2074,14 @@ export default function App() {
             </button>
             <button
               onClick={() => setIsCommandPaletteOpen(true)}
+              onMouseEnter={() => speakText("Open Math Tool Palette. Shortcut is Command or Control M.")}
+              onFocus={() => speakText("Open Math Tool Palette. Shortcut is Command or Control M.")}
               className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-black/20 hover:bg-black/30 border border-transparent hover:border-white/10 text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-2 focus:ring-white/20"
               title="Open Math Tool Palette"
             >
               <Calculator size={16} />
               <span className="hidden sm:inline">Commands</span>
-              <kbd className="hidden sm:inline-block bg-black/40 border border-white/5 rounded px-1.5 py-0.5 text-[10px] font-mono ml-1 text-white/70">
+              <kbd className="hidden sm:inline-block bg-white/20 border border-white/50 rounded px-1.5 py-0.5 text-[10px] font-mono ml-1 text-white font-bold">
                 Cmd / Ctrl M
               </kbd>
             </button>
@@ -1980,9 +2092,42 @@ export default function App() {
       <div className="flex-1 flex flex-row pointer-events-auto h-full w-full relative z-0 overflow-hidden">
         {/* Main Workspace */}
         <div
-          className={`transition-all duration-500 ease-out flex-1 relative h-full overflow-y-auto ${isScratchpadOpen ? "w-1/2 -translate-x-4 opacity-30 pointer-events-none" : "w-full translate-x-0 opacity-100"}`}
+          className={`transition-all duration-500 ease-out flex-1 relative h-full flex flex-col overflow-y-auto ${isScratchpadOpen ? "w-1/2 -translate-x-4 opacity-30 pointer-events-none" : "w-full translate-x-0 opacity-100"}`}
         >
-          <ol className="list-decimal pl-[72px] pr-8 py-8 space-y-4 font-sans text-lg font-bold text-[#b4c9da] marker:text-[#86a8c3]">
+          <nav 
+            aria-label="Lesson Notes"
+            tabIndex={0}
+            onFocus={() => {
+              speakText("Module 4: Operations. The Rules of Integers. When adding and subtracting integers, remember these key concepts: 1. Adding a negative is like subtracting a positive. 2. Subtracting a negative is like adding a positive.");
+            }}
+            onKeyDown={(e) => {
+              if (e.key.length === 1 || e.key === "Enter") {
+                e.preventDefault();
+                playErrorSound();
+              }
+            }}
+            className="shrink-0 bg-[#0c1f2e] border-b-[2px] border-[#316995]/30 p-8 shadow-sm relative focus:ring-2 focus:ring-inset focus:ring-blue-500 outline-none"
+          >
+            <div className="max-w-3xl mx-auto space-y-6 text-[#b4c9da]">
+              <div className="flex items-center gap-3 text-blue-400">
+                <h2 className="text-sm font-bold uppercase tracking-widest text-[#316995]">Module 4: Operations</h2>
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">The Rules of Integers</h1>
+                <p className="text-[#86a8c3] text-lg leading-relaxed">
+                  When adding and subtracting integers, remember these key concepts:
+                </p>
+              </div>
+              <div className="bg-[#112a3d] rounded-lg p-6 border border-[#316995]/20 font-mono text-center shadow-inner mt-4">
+                <p className="mb-4">1. Adding a negative is like subtracting a positive:<br/> <span className="text-white">a + (-b) = a - b</span></p>
+                <p>2. Subtracting a negative is like adding a positive:<br/> <span className="text-white">a - (-b) = a + b</span></p>
+              </div>
+            </div>
+            <div className="absolute top-4 right-4 bg-blue-500/10 text-blue-300 text-[10px] font-bold px-2 py-1 uppercase tracking-wider rounded border border-blue-400/20">Read-Only</div>
+          </nav>
+          
+          <main aria-label="Assignment Canvas" className="flex-1 relative pb-20">
+            <ol className="list-decimal pl-[72px] pr-8 py-8 space-y-4 font-sans text-lg font-bold text-[#b4c9da] marker:text-[#86a8c3]">
             {Array.from({
               length:
                 Math.max(
@@ -2034,7 +2179,7 @@ export default function App() {
                           {block.cells.map((cell) => (
                             <div
                               key={`${cell.c}`}
-                              className="absolute flex items-center justify-center text-[24px] font-medium text-[#112a3d] font-sans"
+                              className="absolute flex items-center justify-center text-[24px] font-medium text-cyan-400 font-sans"
                               style={{
                                 left: (cell.c - block.minC) * 46,
                                 width: 46,
@@ -2050,10 +2195,10 @@ export default function App() {
                     {isActiveView && currentActiveCell.r === r && (
                       <input
                         id="grid-input"
-                        className={`absolute flex items-center justify-center text-[24px] font-medium text-[#112a3d] text-center outline-none m-0 p-0 font-sans cursor-text ${
+                        className={`absolute flex items-center justify-center text-[24px] font-medium text-cyan-400 text-center outline-none m-0 p-0 font-sans cursor-text ${
                           bgType === "grid"
-                            ? "bg-blue-500/10 border-[2.5px] border-blue-500 shadow-sm"
-                            : "bg-transparent border-[2.5px] border-blue-500/0 focus:border-blue-500/50 caret-[#112a3d]"
+                            ? "bg-[#112a3d]/50 border-2 border-cyan-400 ring-2 ring-inset ring-[#0a0a0a] shadow-[0_0_10px_rgba(34,211,238,0.5)] z-20"
+                            : "bg-transparent border-[2.5px] border-cyan-400/0 focus:border-cyan-400/50 caret-cyan-400 z-20"
                         }`}
                         style={{
                           top: 0,
@@ -2068,7 +2213,8 @@ export default function App() {
                         }
                         onChange={handleCellChange}
                         onKeyDown={handleInputKeyDown}
-                        readOnly={isSubmitted}
+                        readOnly={isSubmitted || (isGroupWork && !hasControl)}
+                        tabIndex={(!isGroupWork || hasControl) ? 0 : -1}
                         autoComplete="off"
                         autoFocus
                       />
@@ -2133,6 +2279,7 @@ export default function App() {
               );
             })}
           </ol>
+          </main>
         </div>
 
         {/* Scratchpad Drawer */}
@@ -2162,23 +2309,29 @@ export default function App() {
 
           <div className="flex-1 relative overflow-y-auto">
             {broadcastReply && (
-              <div className="m-6 mb-2 p-4 rounded-xl bg-blue-900/40 border border-blue-500/20 text-[#b4c9da] shadow-inner">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Peer Reply</div>
-                  <div className="text-sm font-medium text-white">from {broadcastReply.student}</div>
+              <div className="m-6 mb-2 p-5 rounded-2xl bg-cyan-900/30 border border-cyan-400/40 text-[#b4c9da] shadow-lg relative overflow-hidden backdrop-blur-md">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-400/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+                <div className="flex items-center gap-3 mb-4 relative z-10">
+                  <div className="bg-cyan-400/20 text-cyan-300 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest ring-1 ring-cyan-400/30 flex items-center gap-1.5">
+                    <MessageSquare size={12} className="text-cyan-400" />
+                    Peer Reply
+                  </div>
+                  <div className="text-sm font-semibold text-white">from {broadcastReply.student}</div>
                   <button 
                     onClick={() => setBroadcastReply(null)}
-                    className="ml-auto text-blue-400 hover:text-white"
+                    className="ml-auto text-cyan-400/60 hover:text-cyan-300 transition-colors bg-cyan-900/40 p-1.5 rounded-full hover:bg-cyan-800/60"
                   >
-                    <X size={16} />
+                    <X size={14} strokeWidth={2.5} />
                   </button>
                 </div>
-                <div className="bg-black/20 p-3 rounded-lg font-mono text-center text-xl text-white mb-3 shadow-[inset_0_1px_3px_rgba(0,0,0,0.3)]">
+                <div className="bg-[#0c1f2e]/80 p-4 rounded-xl font-mono text-center text-2xl text-cyan-400 mb-4 shadow-inner border border-cyan-900 ring-1 ring-inset ring-black/50 relative z-10 font-bold">
                   {broadcastReply.lineText}
                 </div>
-                <div className="flex items-start gap-2 bg-blue-500/10 p-3 rounded-lg">
-                  <div className="mt-0.5 text-blue-400">💬</div>
-                  <div className="text-sm leading-relaxed text-blue-100">{broadcastReply.mockFeedback}</div>
+                <div className="flex items-start gap-3 bg-cyan-950/50 p-3.5 rounded-xl border border-cyan-800/30 relative z-10">
+                  <div className="mt-0.5 text-cyan-400 shrink-0 bg-cyan-900/50 p-1.5 rounded-full">
+                    <MessageSquare size={14} className="fill-cyan-400/20" />
+                  </div>
+                  <div className="text-sm leading-relaxed text-cyan-100 font-medium">{broadcastReply.mockFeedback}</div>
                 </div>
               </div>
             )}
@@ -2240,10 +2393,10 @@ export default function App() {
                       {isActiveView && currentActiveCell.r === r && (
                         <input
                           id="grid-input"
-                          className={`absolute flex items-center justify-center text-[24px] font-medium text-white text-center outline-none m-0 p-0 font-sans cursor-text ${
+                          className={`absolute flex items-center justify-center text-[24px] font-medium text-cyan-400 text-center outline-none m-0 p-0 font-sans cursor-text ${
                             bgType === "grid"
-                              ? "bg-[#2a2a2a] border-[2.5px] border-gray-500 shadow-sm"
-                              : "bg-transparent border-[2.5px] border-blue-500/0 focus:border-blue-500/50 caret-white"
+                              ? "bg-[#112a3d]/50 border-2 border-cyan-400 ring-2 ring-inset ring-[#0a0a0a] shadow-[0_0_10px_rgba(34,211,238,0.5)] z-20"
+                              : "bg-transparent border-[2.5px] border-cyan-400/0 focus:border-cyan-400/50 caret-cyan-400 z-20"
                           }`}
                           style={{
                             top: 0,
@@ -2258,7 +2411,8 @@ export default function App() {
                           }
                           onChange={handleCellChange}
                           onKeyDown={handleInputKeyDown}
-                          readOnly={isSubmitted}
+                          readOnly={isSubmitted || (isGroupWork && !hasControl)}
+                          tabIndex={(!isGroupWork || hasControl) ? 0 : -1}
                           autoComplete="off"
                           autoFocus
                         />
@@ -2337,11 +2491,11 @@ export default function App() {
             className="absolute inset-0"
             onClick={() => setIsCommandPaletteOpen(false)}
           />
-          <div className="relative w-full max-w-2xl bg-[#ffffff] rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[70vh]">
-            <div className="flex items-center px-4 md:px-6 border-b border-gray-100 bg-white">
+          <div className="relative w-full max-w-2xl bg-[#0c1f2e] rounded-2xl shadow-2xl border border-[#316995] overflow-hidden flex flex-col max-h-[70vh]">
+            <div className="flex items-center px-4 md:px-6 border-b border-[#316995]/30 bg-[#112a3d]">
               <Search
                 size={20}
-                className="text-gray-400 mr-3 md:mr-4 shrink-0"
+                className="text-cyan-400 mr-3 md:mr-4 shrink-0"
               />
               <input
                 ref={commandPaletteInputRef}
@@ -2349,7 +2503,7 @@ export default function App() {
                 onChange={(e) => setPaletteSearch(e.target.value)}
                 onKeyDown={handlePaletteKeyDown}
                 placeholder="Search math symbols... (e.g. 'root', 'square', 'pi')"
-                className="flex-1 py-5 md:py-6 bg-transparent outline-none text-gray-800 text-lg md:text-xl placeholder-gray-400 font-sans tracking-wide"
+                className="flex-1 py-5 md:py-6 bg-transparent outline-none text-white text-lg md:text-xl placeholder-[#86a8c3] font-sans tracking-wide"
               />
               <button
                 onClick={() => {
@@ -2357,25 +2511,25 @@ export default function App() {
                     speakText(filteredSymbols[paletteSelectedIndex].name);
                   }
                 }}
-                className="mr-3 p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                className="mr-3 p-2 text-[#86a8c3] hover:text-cyan-400 hover:bg-cyan-900/30 rounded-md transition-colors"
                 title="Repeat voice output (Alt+R)"
               >
                 <Volume2 size={20} />
               </button>
-              <kbd className="hidden sm:inline-block bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-xs font-mono text-gray-400 ml-1">
+              <kbd className="hidden sm:inline-block bg-[#0c1f2e] border border-[#316995] rounded-md px-2 py-1 text-xs font-mono text-cyan-400 ml-1 font-bold">
                 ESC
               </kbd>
             </div>
 
             {filteredSymbols.length === 0 ? (
-              <div className="py-16 text-center text-gray-400 text-sm md:text-base flex flex-col items-center">
-                <Calculator size={40} className="text-gray-200 mb-4" />
+              <div className="py-16 text-center text-[#86a8c3] text-sm md:text-base flex flex-col items-center">
+                <Calculator size={40} className="text-[#316995] mb-4" />
                 No math symbols found for "{paletteSearch}"
               </div>
             ) : (
               <div
                 ref={paletteListRef}
-                className="flex-1 overflow-y-auto py-2 bg-gray-50/50"
+                className="flex-1 overflow-y-auto py-2 bg-[#0c1f2e]"
               >
                 {filteredSymbols.map((item, index) => {
                   const isSelected = index === paletteSelectedIndex;
@@ -2395,33 +2549,36 @@ export default function App() {
                         } else if ((item as any).action === "context_locator") {
                           setIsCommandPaletteOpen(false);
                           triggerContextLocator();
+                        } else if ((item as any).action === "start_group_work") {
+                          setIsCommandPaletteOpen(false);
+                          toggleGroupWork();
                         } else {
                           insertSymbol(item.symbol);
                         }
                       }}
                       onMouseEnter={() => setPaletteSelectedIndex(index)}
-                      className={`w-full flex items-center justify-between px-4 md:px-6 py-3 text-left transition-all outline-none border-l-4
-                               ${isSelected ? "bg-white border-blue-500 shadow-sm" : "border-transparent hover:bg-gray-100/50"}
+                      className={`flex items-center justify-between px-4 md:px-6 py-3 text-left transition-all outline-none border-[3px] my-1 rounded-lg mx-2 w-[calc(100%-16px)]
+                               ${isSelected ? "bg-[#112a3d] border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.3)]" : "border-transparent hover:bg-[#1a4b6e]/30"}
                             `}
                     >
                       <div className="flex items-center gap-4 md:gap-5">
                         <span
                           className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-lg text-2xl font-medium shrink-0 transition-colors
-                                  ${isSelected ? "bg-blue-50 text-blue-600 border border-blue-100" : "bg-white text-gray-800 border border-gray-200 shadow-sm"}
+                                  ${isSelected ? "bg-cyan-900/50 text-cyan-400 border border-cyan-400/50" : "bg-[#112a3d] text-white border border-[#316995] shadow-sm"}
                                `}
                         >
                           {item.symbol}
                         </span>
                         <span
-                          className={`text-[15px] md:text-[16px] tracking-wide ${isSelected ? "text-blue-900 font-medium" : "text-gray-600"}`}
+                          className={`text-[15px] md:text-[16px] tracking-wide ${isSelected ? "text-cyan-400 font-bold" : "text-[#b4c9da]"}`}
                         >
                           {item.name}
                         </span>
                       </div>
                       {isSelected && (
-                        <span className="hidden sm:flex text-xs text-blue-500 items-center gap-2">
+                        <span className="hidden sm:flex text-xs text-cyan-400 items-center gap-2">
                           Press{" "}
-                          <kbd className="bg-blue-50 border border-blue-200 shadow-sm rounded-md px-2 py-1 uppercase tracking-wider text-[10px] font-bold text-blue-700">
+                          <kbd className="bg-cyan-900/50 border border-cyan-400 shadow-sm rounded-md px-2 py-1 uppercase tracking-wider text-[10px] font-bold text-cyan-400">
                             ↵ Enter
                           </kbd>
                         </span>
@@ -2558,6 +2715,9 @@ export default function App() {
                       else if (item.action === "context_locator") triggerContextLocator();
                       else if (item.action === "undo") executeUndo();
                       else if (item.action === "redo") executeRedo();
+                      else if (item.action === "broadcast_line") openBroadcastDialog();
+                      else if (item.action === "pass_control") passControl();
+                      else if (item.action === "start_group_work") toggleGroupWork();
                     }}
                     onMouseEnter={() => setHelpMenuSelectedIndex(index)}
                     className={`w-full flex items-center justify-between px-4 md:px-6 py-3 text-left transition-all outline-none border-l-4
