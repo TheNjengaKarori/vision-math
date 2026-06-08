@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { CheckCircle, Flag, Mic, Check, AlertCircle, X, Inbox } from "lucide-react";
+import { CheckCircle, Flag, Mic, Check, AlertCircle, X, Inbox, BarChart2, Radio } from "lucide-react";
 
 export interface MathLine {
   id: string;
@@ -103,7 +103,7 @@ export const TeacherFeedView: React.FC<TeacherFeedViewProps> = ({
   const [activeFlagSubmissionId, setActiveFlagSubmissionId] = useState<string | null>(null);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [isQueueExpanded, setIsQueueExpanded] = useState(false);
-  const [viewFilter, setViewFilter] = useState<"submitted" | "missing">("submitted");
+  const [viewFilter, setViewFilter] = useState<"dashboard" | "submitted" | "missing">("dashboard");
 
   const handleApprove = (id: string) => {
     setSubmissions((prev) =>
@@ -155,6 +155,15 @@ export const TeacherFeedView: React.FC<TeacherFeedViewProps> = ({
           </button>
         </div>
         <div className="flex bg-[#112a3d] p-1 rounded-lg">
+          <button
+            onClick={() => setViewFilter("dashboard")}
+            className={`flex-1 flex justify-center items-center py-2 text-sm font-medium rounded-md transition-colors ${
+              viewFilter === "dashboard" ? "bg-[#1a4b6e] text-cyan-400 shadow-sm" : "text-[#86a8c3] hover:text-white hover:bg-[#1a4b6e]/50"
+            }`}
+          >
+            <BarChart2 size={16} className="mr-2" />
+            Dashboard
+          </button>
           <button
             onClick={() => setViewFilter("submitted")}
             className={`flex-1 flex justify-center items-center py-2 text-sm font-medium rounded-md transition-colors ${
@@ -220,7 +229,57 @@ export const TeacherFeedView: React.FC<TeacherFeedViewProps> = ({
 
       {/* Feed Stream */}
       <main className="flex-1 max-w-3xl w-full mx-auto p-4 md:p-6 flex flex-col gap-6">
-        {viewFilter === "submitted" ? (
+        {viewFilter === "dashboard" ? (
+          <div className="flex flex-col gap-6 animate-in fade-in">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-[#0c1f2e] p-5 rounded-xl border border-[#316995]/30 shadow-sm flex flex-col items-center justify-center text-center">
+                <span className="text-[#86a8c3] text-sm uppercase font-bold tracking-wider mb-2">Class Progress</span>
+                <span className="text-4xl font-bold text-cyan-400 mb-1">82%</span>
+                <span className="text-sm text-cyan-400/70">Completion rate</span>
+              </div>
+              <div className="bg-[#0c1f2e] p-5 rounded-xl border border-[#316995]/30 shadow-sm flex flex-col items-center justify-center text-center">
+                <span className="text-[#86a8c3] text-sm uppercase font-bold tracking-wider mb-2">Active Alerts</span>
+                <span className="text-4xl font-bold text-amber-500 mb-1">3</span>
+                <span className="text-sm text-amber-500/70">Common mistakes detected</span>
+              </div>
+            </div>
+
+            <div className="bg-[#0c1f2e] rounded-xl border border-[#316995]/30 shadow-sm overflow-hidden flex flex-col">
+              <div className="p-4 border-b border-[#316995]/30 bg-[#112a3d] flex items-center justify-between">
+                 <h3 className="font-bold text-white text-lg">Real-Time Insights</h3>
+              </div>
+              <div className="p-5 flex flex-col gap-4">
+                <div className="bg-[#1a4b6e]/30 px-4 py-3 rounded-lg border border-[#1a4b6e] flex items-start gap-4">
+                  <div className="bg-[#1a4b6e] p-2 rounded text-cyan-300 mt-0.5">
+                    <Flag size={18} />
+                  </div>
+                  <div>
+                    <h4 className="text-white font-bold mb-1">Common Mistake: Sign errors</h4>
+                    <p className="text-[#86a8c3] text-sm">3 students entered incorrect signs for <span className="text-white font-mono bg-[#112a3d] px-1 rounded">5 - (-3)</span>.</p>
+                  </div>
+                </div>
+                
+                <div className="bg-amber-900/20 px-4 py-3 rounded-lg border border-amber-900/30 flex items-start gap-4">
+                  <div className="bg-amber-900/40 p-2 rounded text-amber-400 mt-0.5">
+                    <AlertCircle size={18} />
+                  </div>
+                  <div>
+                    <h4 className="text-amber-400 font-bold mb-1">Stuck on Step 3</h4>
+                    <p className="text-[#86a8c3] text-sm">Most students are stuck on Step 3 (combine like terms). Consider intervening.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => alert("Broadcasting explanation logic...")}
+              className="mt-2 w-full py-4 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-500 flex items-center justify-center gap-3 transition-colors shadow-lg border border-blue-400/50 outline-none focus:ring-2 focus:ring-blue-400"
+            >
+              <Radio size={22} className="animate-pulse" />
+              Pause All Students & Broadcast Explanation
+            </button>
+          </div>
+        ) : viewFilter === "submitted" ? (
           <>
             {submissions.map((submission) => (
               <div

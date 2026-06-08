@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Search, Calculator, Volume2, Save, FilePlus, X, Hand, MessageSquare } from "lucide-react";
+import { Search, Calculator, Volume2, Save, FilePlus, X, Hand, MessageSquare, RefreshCw, Send, PlayCircle, ArrowRight } from "lucide-react";
 import { evaluate } from "mathjs";
 import { TeacherFeedView } from "./components/TeacherFeedView";
 
@@ -390,6 +390,46 @@ const MATH_SYMBOLS = [
     name: "Start Group Work",
     action: "start_group_work",
   },
+  {
+    symbol: "🚀",
+    name: "Submit (Ctrl + S)",
+    action: "toggle_submission",
+  },
+  {
+    symbol: "½",
+    name: "Insert Fraction",
+    action: "insert_fraction",
+  },
+  {
+    symbol: "🔄",
+    name: "Reset for Next User (Ctrl + R)",
+    action: "reset_next_user",
+  },
+  {
+    symbol: "💾",
+    name: "Save Lesson",
+    action: "save_lesson",
+  },
+  {
+    symbol: "🔁",
+    name: "Refresh to Default Equation",
+    action: "refresh_equation",
+  },
+  {
+    symbol: "📄",
+    name: "Start New Lesson",
+    action: "start_new_lesson",
+  },
+  {
+    symbol: "▶️",
+    name: "Hear Explanation",
+    action: "hear_explanation",
+  },
+  {
+    symbol: "⏭️",
+    name: "Next Question",
+    action: "next_question",
+  },
 ];
 
 const AUTOCOMPLETE_DICT = [
@@ -510,6 +550,12 @@ const createBlock = (
   };
 };
 
+const defaultEq = "5+(-3)=5-3";
+const defaultGridData: Record<string, string> = {};
+for (let i = 0; i < defaultEq.length; i++) {
+  defaultGridData[`0,${i}`] = defaultEq[i];
+}
+
 export default function App() {
   const [className, setClassName] = useState("Algebra");
   const [year, setYear] = useState("2026");
@@ -523,8 +569,8 @@ export default function App() {
   });
   const dateInputRef = useRef<HTMLInputElement>(null);
 
-  const [activeCell, setActiveCell] = useState({ r: 0, c: 0 });
-  const [gridData, setGridData] = useState<Record<string, string>>({});
+  const [activeCell, setActiveCell] = useState({ r: 0, c: defaultEq.length });
+  const [gridData, setGridData] = useState<Record<string, string>>(defaultGridData);
   const [bgType, setBgType] = useState<"grid" | "blank">("grid");
 
   const [currentView, setCurrentView] = useState<"student" | "teacher">("student");
@@ -540,6 +586,11 @@ export default function App() {
   const [helpMenuSelectedIndex, setHelpMenuSelectedIndex] = useState(0);
   const helpMenuRef = useRef<HTMLDivElement>(null);
   const helpMenuInputRef = useRef<HTMLInputElement>(null);
+
+  const [isFractionDialogOpen, setIsFractionDialogOpen] = useState(false);
+  const [fractionNum, setFractionNum] = useState("");
+  const [fractionDen, setFractionDen] = useState("");
+  const fractionNumRef = useRef<HTMLInputElement>(null);
 
   const [isBroadcastPaletteOpen, setIsBroadcastPaletteOpen] = useState(false);
   const [broadcastSelectedIndex, setBroadcastSelectedIndex] = useState(0);
@@ -615,6 +666,8 @@ export default function App() {
     blocks: [] as MathBlock[],
   });
 
+  const [inputError, setInputError] = useState<{r: number, c: number} | null>(null);
+
   const historyRef = useRef<{
     main: { gridData: Record<string, string>; activeCell: { r: number; c: number }; desc: string }[];
     scratch: { gridData: Record<string, string>; activeCell: { r: number; c: number }; desc: string }[];
@@ -646,19 +699,96 @@ export default function App() {
     setComputeStatus("New lesson started.");
   };
 
-  const saveLesson = () => {
-    const msg = `${lesson || "Lesson"} saved successfully.`;
-    setComputeStatus(msg);
+  const refreshEquation = () => {
+    setGridData(defaultGridData);
+    setBlocks([]);
+    setComputedAnswers([]);
+    setActiveCell({ r: 0, c: defaultEq.length });
+    setComputeStatus("Equation refreshed.");
   };
 
   const speakText = useCallback((text: string) => {
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.0;
+      const speechText = text
+        .replace(/\(/g, " open bracket ")
+        .replace(/\)/g, " close bracket ")
+        .replace(/\//g, " forward slash ")
+        .replace(/\\/g, " backward slash ")
+        .replace(/-/g, " minus ")
+        .replace(/\+/g, " plus ")
+        .replace(/=/g, " equals ");
+      const utterance = new SpeechSynthesisUtterance(speechText);
+      utterance.rate = 0.85; // slower speech rate
       window.speechSynthesis.speak(utterance);
     }
   }, []);
+
+  const resetForNextUser = useCallback(() => {
+    setGridData(defaultGridData);
+    setBlocks([]);
+    setComputedAnswers([]);
+    setActiveCell({ r: 0, c: defaultEq.length });
+    setIsSubmitted(false);
+    setComputeStatus("Reset for next user");
+    speakText("Inputs cleared for the next student.");
+  }, [speakText]);
+
+  const giveHint = useCallback(() => {
+    const hint = "Hint: Remember the rules of integers. Adding a negative is like subtracting a positive. Try evaluating 5 minus 3.";
+    setComputeStatus(hint);
+    speakText(hint);
+  }, [speakText]);
+
+  const saveLesson = () => {
+    const msg = `${lesson || "Lesson"} saved successfully.`;
+    setComputeStatus(msg);
+  };
+
+  const nextQuestion = () => {
+    setIsSubmitted(false);
+    const newEq = "2x - 8 = 12";
+    const newGrid: Record<string, string> = {};
+    for (let i = 0; i < newEq.length; i++) {
+        newGrid[`0,${i}`] = newEq[i];
+    }
+    setGridData(newGrid);
+    setBlocks([]);
+    setComputedAnswers([]);
+    setActiveCell({ r: 0, c: newEq.length });
+    setComputeStatus("New question loaded.");
+    speakText("New question loaded. 2x - 8 = 12.");
+  };
+
+  const hearExplanation = useCallback(() => {
+    const lines: string[] = [];
+    const keys = Object.keys(gridData);
+    let maxR = 0;
+    if (keys.length > 0) {
+      maxR = Math.max(...keys.map((k) => parseInt(k.split(",")[0], 10)));
+    }
+    for (let r = 0; r <= maxR; r++) {
+      const lineText = Object.keys(gridData)
+        .filter((k) => k.startsWith(`${r},`))
+        .sort((a, b) => parseInt(a.split(",")[1]) - parseInt(b.split(",")[1]))
+        .map((k) => gridData[k])
+        .join("")
+        .trim();
+      if (lineText) {
+        lines.push(`Line ${r + 1}: ${lineText}`);
+      }
+    }
+    
+    let explanationText = "";
+    if (lines.length > 0) {
+      explanationText = `Here is the explanation of your work. ${lines.join(". Next step: ")}`;
+    } else {
+      explanationText = "There is no work to explain.";
+    }
+    
+    speakText(explanationText);
+    setComputeStatus("Playing explanation.");
+  }, [gridData, speakText]);
 
   useEffect(() => {
     if (isScratchpadOpen && broadcastReply) {
@@ -1176,7 +1306,9 @@ export default function App() {
     speakText(`Worksheet: ${worksheet}. You are on Line ${currentLine} of ${totalLines}. Focused on column ${currentCol + 1}. ${lineInfo} ${cellInfo}`);
   }, [speakText]);
 
-  const filteredSymbols = paletteSearch ? MATH_SYMBOLS.filter((s) => {
+  const NAV_ACTIONS = ['toggle_submission', 'reset_next_user', 'save_lesson', 'refresh_equation', 'start_new_lesson', 'hear_explanation', 'next_question'];
+
+  const rawFilteredSymbols = paletteSearch ? MATH_SYMBOLS.filter((s) => {
     const term = paletteSearch.toLowerCase();
     return (
       s.name.toLowerCase().includes(term) ||
@@ -1197,8 +1329,24 @@ export default function App() {
     { symbol: "×", name: "Multiply / Times Operator" },
     { symbol: "÷", name: "Divide Operator" },
     { symbol: "=", name: "Equals Operator" },
+    { symbol: "½", name: "Insert Fraction", action: "insert_fraction" },
     { symbol: "🙋‍♂️", name: "Raise Hand (Queue)", action: "raise_hand" },
+    { symbol: "🚀", name: "Submit (Ctrl + S)", action: "toggle_submission" },
+    { symbol: "🔄", name: "Reset for Next User (Ctrl + R)", action: "reset_next_user" },
+    { symbol: "💾", name: "Save Lesson", action: "save_lesson" },
+    { symbol: "🔁", name: "Refresh to Default Equation", action: "refresh_equation" },
+    { symbol: "📄", name: "Start New Lesson", action: "start_new_lesson" },
+    { symbol: "▶️", name: "Hear Explanation", action: "hear_explanation" },
+    { symbol: "⏭️", name: "Next Question", action: "next_question" },
   ];
+
+  const filteredSymbols = [...rawFilteredSymbols].sort((a, b) => {
+    const isA = NAV_ACTIONS.includes((a as any).action);
+    const isB = NAV_ACTIONS.includes((b as any).action);
+    if (isA && !isB) return 1;
+    if (!isA && isB) return -1;
+    return 0;
+  });
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1206,6 +1354,20 @@ export default function App() {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
         toggleSubmission();
+        return;
+      }
+
+      // Reset for next user (Ctrl + R or Cmd + R)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "r") {
+        e.preventDefault();
+        resetForNextUser();
+        return;
+      }
+
+      // Contextual Hint (Ctrl + H or Cmd + H)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "h") {
+        e.preventDefault();
+        giveHint();
         return;
       }
 
@@ -1619,6 +1781,47 @@ export default function App() {
   );
   const rowsList = Array.from({ length: maxRowIndex + 1 }).map((_, i) => i);
 
+  const validateMathInput = (char: string, cell: {r: number, c: number}) => {
+    if (!char) return { isValid: true, message: "" };
+
+    const isDivisionOrMultiplication = ["/", "*", "×", "÷"].includes(char);
+    const isOperator = ["+", "-", "=", ...["/", "*", "×", "÷"]].includes(char);
+
+    if (cell.c === 0 && isOperator) {
+      let name = char;
+      if (char === "/") name = "division slash";
+      if (char === "*") name = "asterisk";
+      if (char === "×") name = "multiply sign";
+      if (char === "÷") name = "divide sign";
+      if (char === "=") name = "equals sign";
+      if (char === "+") name = "plus sign";
+      if (char === "-") name = "minus sign";
+      return { isValid: false, message: `You started the line with a ${name}. You might have accidentally pressed the wrong key.` };
+    }
+
+    if (isDivisionOrMultiplication) {
+      let name = char;
+      if (char === "/") name = "division slash";
+      if (char === "*") name = "asterisk";
+      if (char === "×") name = "multiply sign";
+      if (char === "÷") name = "divide sign";
+      return { isValid: false, message: `You typed a ${name}, but this problem only requires addition and subtraction.` };
+    }
+
+    const allowedLetters = ['r', 'R', 'b', 'B', 'h', 'H', 'p', 'P', 'i', 'I', 's', 'S', 'a', 'A', 't', 'T'];
+    if (/[a-zA-Z]/.test(char) && !allowedLetters.includes(char)) {
+       return { isValid: false, message: `You typed a letter. This problem only requires numbers, addition, subtraction, equals, and parentheses.` };
+    }
+
+    const whitelist = /^[0-9+\-=().,<>!a-zA-Z]$/;
+    const nemethSymbols = ['√', 'π', '∑', '∫', 'α', 'β', 'θ', '≠', '≤', '≥', '→', '⟨', '⟩', '∞', '½'];
+    if (!whitelist.test(char) && !isDivisionOrMultiplication && !isOperator && !nemethSymbols.includes(char)) {
+       return { isValid: false, message: `You typed an out of scope character. This problem only requires numbers, addition, subtraction, equals, and parentheses.` };
+    }
+
+    return { isValid: true, message: "" };
+  };
+
   const handleCellChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isSubmitted) return;
     const val = e.target.value.slice(-1);
@@ -1628,6 +1831,14 @@ export default function App() {
         ...prev,
         [`${activeCell.r},${activeCell.c}`]: val,
       }));
+      return;
+    }
+
+    const validation = validateMathInput(val, activeCell);
+    if (!validation.isValid) {
+      speakText(validation.message);
+      setInputError({ r: activeCell.r, c: activeCell.c });
+      setTimeout(() => setInputError(null), 300);
       return;
     }
 
@@ -1728,7 +1939,29 @@ export default function App() {
     }
   };
 
+  const insertMultipleSymbols = (symbols: string[]) => {
+    setGridData((prev) => {
+      const next = { ...prev };
+      let currentC = activeCell.c;
+      symbols.forEach((sym) => {
+        next[`${activeCell.r},${currentC}`] = sym;
+        currentC++;
+      });
+      return next;
+    });
+    setActiveCell((prev) => ({ ...prev, c: prev.c + symbols.length }));
+  };
+
   const insertSymbol = (symbol: string) => {
+    const validation = validateMathInput(symbol, activeCell);
+    if (!validation.isValid) {
+      speakText(validation.message);
+      setIsCommandPaletteOpen(false);
+      setInputError({ r: activeCell.r, c: activeCell.c });
+      setTimeout(() => setInputError(null), 300);
+      return;
+    }
+
     setGridData((prev) => ({
       ...prev,
       [`${activeCell.r},${activeCell.c}`]: symbol,
@@ -1855,6 +2088,33 @@ export default function App() {
         } else if ((item as any).action === "start_group_work") {
           setIsCommandPaletteOpen(false);
           toggleGroupWork();
+        } else if ((item as any).action === "insert_fraction") {
+          setIsCommandPaletteOpen(false);
+          setFractionNum("");
+          setFractionDen("");
+          setIsFractionDialogOpen(true);
+          setTimeout(() => fractionNumRef.current?.focus(), 50);
+        } else if ((item as any).action === "toggle_submission") {
+          setIsCommandPaletteOpen(false);
+          toggleSubmission();
+        } else if ((item as any).action === "reset_next_user") {
+          setIsCommandPaletteOpen(false);
+          resetForNextUser();
+        } else if ((item as any).action === "save_lesson") {
+          setIsCommandPaletteOpen(false);
+          saveLesson();
+        } else if ((item as any).action === "refresh_equation") {
+          setIsCommandPaletteOpen(false);
+          refreshEquation();
+        } else if ((item as any).action === "start_new_lesson") {
+          setIsCommandPaletteOpen(false);
+          startNewLesson();
+        } else if ((item as any).action === "hear_explanation") {
+          setIsCommandPaletteOpen(false);
+          hearExplanation();
+        } else if ((item as any).action === "next_question") {
+          setIsCommandPaletteOpen(false);
+          nextQuestion();
         } else {
           insertSymbol(item.symbol);
         }
@@ -1939,8 +2199,12 @@ export default function App() {
         </div>
 
         <div className="flex justify-between items-center h-14 bg-[#163e5b] text-white px-2 border-b-2 border-transparent relative z-20">
-          <div className="flex flex-1 items-center">
-            <button className="hover:bg-white/10 rounded p-1 ml-1 cursor-pointer transition-colors focus:outline-none shrink-0">
+          <div className="flex items-center min-w-[20%] shrink">
+            <button 
+              onMouseEnter={() => speakText("Go back")}
+              onFocus={() => speakText("Go back")}
+              className="hover:bg-white/10 rounded p-1 ml-1 cursor-pointer transition-colors focus:outline-none shrink-0"
+            >
               <svg
                 width="24"
                 height="24"
@@ -1961,6 +2225,8 @@ export default function App() {
                 value={className}
                 onChange={(e) => setClassName(e.target.value)}
                 readOnly={isSubmitted}
+                onMouseEnter={() => speakText(`Class: ${className}`)}
+                onFocus={() => speakText(`Class: ${className}`)}
                 className="bg-transparent outline-none w-[70px] sm:w-[90px] border-b border-transparent focus:border-white/50 px-1 py-0.5 rounded cursor-text hover:bg-white/5 transition-colors placeholder-[#b4c9da]/50 flex-shrink-0"
                 placeholder="Class"
               />
@@ -1972,6 +2238,8 @@ export default function App() {
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   readOnly={isSubmitted}
+                  onMouseEnter={() => speakText(`Subject: ${subject}`)}
+                  onFocus={() => speakText(`Subject: ${subject}`)}
                   className="bg-transparent outline-none w-[80px] sm:w-[100px] border-b border-transparent focus:border-white/50 px-1 py-0.5 rounded cursor-text hover:bg-white/5 transition-colors placeholder-white uppercase tracking-widest text-[12px] sm:text-[13px] text-white font-semibold focus:text-white"
                   placeholder="SUBJECT"
                 />
@@ -1983,6 +2251,8 @@ export default function App() {
                   value={lesson}
                   onChange={(e) => setLesson(e.target.value)}
                   readOnly={isSubmitted}
+                  onMouseEnter={() => speakText(`Lesson: ${lesson}`)}
+                  onFocus={() => speakText(`Lesson: ${lesson}`)}
                   className="bg-transparent outline-none min-w-[70px] max-w-[200px] px-2 py-0.5 cursor-text hover:bg-white/10 transition-colors placeholder-white/50 text-center text-white text-[12px] sm:text-[13px] tracking-widest uppercase box-content"
                   style={{ width: `${Math.max(lesson.length, 6) * 1.1}ch` }}
                   placeholder="LESSON"
@@ -2023,13 +2293,15 @@ export default function App() {
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   disabled={isSubmitted}
+                  onMouseEnter={() => speakText(`Date: ${date}`)}
+                  onFocus={() => speakText(`Date: ${date}`)}
                   className="absolute inset-0 opacity-0 cursor-pointer w-full z-10"
                 />
               </div>
             </div>
           </div>
 
-          <div className="flex-1 flex justify-center h-14 items-start relative pointer-events-none">
+          <div className="absolute left-1/2 -translate-x-1/2 flex justify-center h-14 items-start pointer-events-none z-10 w-auto">
             {broadcastReply && !isScratchpadOpen && (
               <button
                 onClick={() => toggleScratchpad()}
@@ -2041,50 +2313,115 @@ export default function App() {
             )}
           </div>
 
-          <div className="flex-1 flex justify-end gap-2 px-2">
-            <button
-              onClick={executeRaiseHand}
-              onMouseEnter={() => speakText("Raise Hand for help")}
-              onFocus={() => speakText("Raise Hand for help")}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-black/20 hover:bg-black/30 border border-transparent hover:border-white/10 text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-2 focus:ring-white/20"
-              title="Raise hand to request help"
-            >
-              <Hand size={16} />
-              <span className="hidden sm:inline">Raise Hand</span>
-            </button>
-            <button
-              onClick={startNewLesson}
-              onMouseEnter={() => speakText("Start a new lesson")}
-              onFocus={() => speakText("Start a new lesson")}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-black/20 hover:bg-black/30 border border-transparent hover:border-white/10 text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-2 focus:ring-white/20"
-              title="Start a new lesson"
-            >
-              <FilePlus size={16} />
-              <span className="hidden sm:inline">New Lesson</span>
-            </button>
-            <button
-              onClick={saveLesson}
-              onMouseEnter={() => speakText("Save current lesson")}
-              onFocus={() => speakText("Save current lesson")}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-black/20 hover:bg-black/30 border border-transparent hover:border-white/10 text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-2 focus:ring-white/20"
-              title="Save current lesson"
-            >
-              <Save size={16} />
-              <span className="hidden sm:inline">Save</span>
-            </button>
-            <button
-              onClick={() => setIsCommandPaletteOpen(true)}
-              onMouseEnter={() => speakText("Open Math Tool Palette. Shortcut is Command or Control M.")}
-              onFocus={() => speakText("Open Math Tool Palette. Shortcut is Command or Control M.")}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-black/20 hover:bg-black/30 border border-transparent hover:border-white/10 text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-2 focus:ring-white/20"
-              title="Open Math Tool Palette"
-            >
-              <Calculator size={16} />
-              <span className="hidden sm:inline">Commands</span>
-              <kbd className="hidden sm:inline-block bg-white/20 border border-white/50 rounded px-1.5 py-0.5 text-[10px] font-mono ml-1 text-white font-bold">
-                Cmd / Ctrl M
-              </kbd>
-            </button>
+          <div className="flex justify-end gap-1 sm:gap-2 px-1 sm:px-2 items-center overflow-x-auto no-scrollbar shrink-0 ml-auto max-w-[100%]">
+            <div className="flex gap-0.5 sm:gap-2 items-center flex-nowrap">
+              <button
+                onClick={executeRaiseHand}
+                onMouseEnter={() => speakText("Raise Hand for help")}
+                onFocus={() => speakText("Raise Hand for help")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-2 focus:ring-white/20 whitespace-nowrap shrink-0"
+                title="Raise hand to request help"
+              >
+                <Hand size={18} />
+                <span className="hidden xl:inline">Hand</span>
+              </button>
+              <button
+                onClick={refreshEquation}
+                onMouseEnter={() => speakText("Refresh to default equation")}
+                onFocus={() => speakText("Refresh to default equation")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-2 focus:ring-white/20 whitespace-nowrap shrink-0"
+                title="Refresh equation"
+              >
+                <RefreshCw size={18} />
+                <span className="hidden xl:inline">Refresh</span>
+              </button>
+              <button
+                onClick={startNewLesson}
+                onMouseEnter={() => speakText("Start a new lesson")}
+                onFocus={() => speakText("Start a new lesson")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-2 focus:ring-white/20 whitespace-nowrap shrink-0"
+                title="Start a new lesson"
+              >
+                <FilePlus size={18} />
+                <span className="hidden xl:inline">New</span>
+              </button>
+              
+              <div className="w-[1px] h-6 bg-[#316995]/30 mx-0.5 sm:mx-1 shrink-0 hidden sm:block"></div>
+              
+              {isSubmitted ? (
+                <>
+                  <button
+                    onClick={hearExplanation}
+                    onMouseEnter={() => speakText("Hear explanation of your work")}
+                    onFocus={() => speakText("Hear explanation of your work")}
+                    className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 border border-transparent hover:border-blue-300 text-[13px] lg:text-sm font-medium transition-all text-white shadow-sm outline-none focus:ring-2 focus:ring-white/20 whitespace-nowrap shrink-0"
+                    title="Hear explanation of your work"
+                  >
+                    <PlayCircle size={18} />
+                    <span className="hidden xl:inline">Explain</span>
+                  </button>
+                  <button
+                    onClick={nextQuestion}
+                    onMouseEnter={() => speakText("Proceed to next question")}
+                    onFocus={() => speakText("Proceed to next question")}
+                    className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-green-600 hover:bg-green-500 border border-transparent hover:border-green-300 text-[13px] lg:text-sm font-medium transition-all text-white shadow-sm outline-none focus:ring-2 focus:ring-white/20 whitespace-nowrap shrink-0"
+                    title="Proceed to next question"
+                  >
+                    <ArrowRight size={18} />
+                    <span className="hidden xl:inline">Next</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={resetForNextUser}
+                    onMouseEnter={() => speakText("Press Control+R or command+R to clear all inputs for the next student.")}
+                    onFocus={() => speakText("Press Control+R or command+R to clear all inputs for the next student.")}
+                    className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-red-500/20 border border-transparent text-[13px] lg:text-sm font-medium transition-all text-red-400 hover:text-red-300 outline-none focus:ring-2 focus:ring-red-400/50 whitespace-nowrap shrink-0"
+                    title="Reset for next user"
+                  >
+                    <RefreshCw size={18} />
+                    <span className="hidden xl:inline">Reset</span>
+                  </button>
+                  <button
+                    onClick={saveLesson}
+                    onMouseEnter={() => speakText("Save current lesson")}
+                    onFocus={() => speakText("Save current lesson")}
+                    className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-[13px] lg:text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-2 focus:ring-white/20 whitespace-nowrap shrink-0"
+                    title="Save current lesson"
+                  >
+                    <Save size={18} />
+                    <span className="hidden xl:inline">Save</span>
+                  </button>
+                  <button
+                    onClick={toggleSubmission}
+                    onMouseEnter={() => speakText("Submit assignment. Shortcut is Command or Control S.")}
+                    onFocus={() => speakText("Submit assignment. Shortcut is Command or Control S.")}
+                    className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-cyan-600 hover:bg-cyan-500 border border-transparent hover:border-cyan-300 text-[13px] lg:text-sm font-medium transition-all text-white shadow-sm outline-none focus:ring-2 focus:ring-white/20 whitespace-nowrap shrink-0"
+                    title="Submit assignment"
+                  >
+                    <Send size={18} />
+                    <span className="hidden xl:inline">Submit</span>
+                  </button>
+                </>
+              )}
+
+              <div className="w-[1px] h-6 bg-[#316995]/30 mx-0.5 lg:mx-1 shrink-0 hidden sm:block"></div>
+
+              <button
+                onClick={() => setIsCommandPaletteOpen(true)}
+                onMouseEnter={() => speakText("Open Math Tool Palette. Shortcut is Command or Control K.")}
+                onFocus={() => speakText("Open Math Tool Palette. Shortcut is Command or Control K.")}
+                className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-[13px] lg:text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-2 focus:ring-white/20 whitespace-nowrap shrink-0"
+                title="Open Math Tool Palette"
+              >
+                <Calculator size={18} />
+                <span className="hidden xl:inline">Tools</span>
+                <kbd className="hidden lg:inline-block bg-white/20 border border-white/50 rounded px-1.5 py-0.5 text-[10px] font-mono text-white font-bold whitespace-nowrap">
+                  ⌘K
+                </kbd>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -2098,7 +2435,7 @@ export default function App() {
             aria-label="Lesson Notes"
             tabIndex={0}
             onFocus={() => {
-              speakText("Module 4: Operations. The Rules of Integers. When adding and subtracting integers, remember these key concepts: 1. Adding a negative is like subtracting a positive. 2. Subtracting a negative is like adding a positive.");
+              speakText("Module 4: Operations. The Rules of Integers. When adding and subtracting integers, remember these key concepts: 1. Adding a negative is like subtracting a positive. a + (-b) = a - b. 2. Subtracting a negative is like adding a positive. a - (-b) = a + b.");
             }}
             onKeyDown={(e) => {
               if (e.key.length === 1 || e.key === "Enter") {
@@ -2194,13 +2531,17 @@ export default function App() {
 
                     {isActiveView && currentActiveCell.r === r && (
                       <input
-                        id="grid-input"
-                        className={`absolute flex items-center justify-center text-[24px] font-medium text-cyan-400 text-center outline-none m-0 p-0 font-sans cursor-text ${
-                          bgType === "grid"
-                            ? "bg-[#112a3d]/50 border-2 border-cyan-400 ring-2 ring-inset ring-[#0a0a0a] shadow-[0_0_10px_rgba(34,211,238,0.5)] z-20"
-                            : "bg-transparent border-[2.5px] border-cyan-400/0 focus:border-cyan-400/50 caret-cyan-400 z-20"
-                        }`}
-                        style={{
+                          id="grid-input"
+                          className={`absolute flex items-center justify-center text-[24px] font-medium text-center outline-none m-0 p-0 font-sans cursor-text transition-colors duration-200 z-20 ${
+                            inputError?.r === currentActiveCell.r && inputError?.c === currentActiveCell.c
+                              ? "bg-red-900/30 border-2 border-red-500 text-red-500 animate-[pulse_0.15s_ease-in-out_2]"
+                              : `text-cyan-400 ${
+                                  bgType === "grid"
+                                    ? "bg-[#112a3d]/50 border-2 border-cyan-400 ring-2 ring-inset ring-[#0a0a0a] shadow-[0_0_10px_rgba(34,211,238,0.5)]"
+                                    : "bg-transparent border-[2.5px] border-cyan-400/0 focus:border-cyan-400/50 caret-cyan-400"
+                                }`
+                          }`}
+                          style={{
                           top: 0,
                           left: currentActiveCell.c * 46,
                           width: 46,
@@ -2393,10 +2734,14 @@ export default function App() {
                       {isActiveView && currentActiveCell.r === r && (
                         <input
                           id="grid-input"
-                          className={`absolute flex items-center justify-center text-[24px] font-medium text-cyan-400 text-center outline-none m-0 p-0 font-sans cursor-text ${
-                            bgType === "grid"
-                              ? "bg-[#112a3d]/50 border-2 border-cyan-400 ring-2 ring-inset ring-[#0a0a0a] shadow-[0_0_10px_rgba(34,211,238,0.5)] z-20"
-                              : "bg-transparent border-[2.5px] border-cyan-400/0 focus:border-cyan-400/50 caret-cyan-400 z-20"
+                          className={`absolute flex items-center justify-center text-[24px] font-medium text-center outline-none m-0 p-0 font-sans cursor-text transition-colors duration-200 z-20 ${
+                            inputError?.r === currentActiveCell.r && inputError?.c === currentActiveCell.c
+                              ? "bg-red-900/30 border-2 border-red-500 text-red-500 animate-[pulse_0.15s_ease-in-out_2]"
+                              : `text-cyan-400 ${
+                                  bgType === "grid"
+                                    ? "bg-[#112a3d]/50 border-2 border-cyan-400 ring-2 ring-inset ring-[#0a0a0a] shadow-[0_0_10px_rgba(34,211,238,0.5)]"
+                                    : "bg-transparent border-[2.5px] border-cyan-400/0 focus:border-cyan-400/50 caret-cyan-400"
+                                }`
                           }`}
                           style={{
                             top: 0,
@@ -2533,10 +2878,20 @@ export default function App() {
               >
                 {filteredSymbols.map((item, index) => {
                   const isSelected = index === paletteSelectedIndex;
+                  const isNavAction = NAV_ACTIONS.includes((item as any).action);
+                  const prevIsNavAction = index > 0 && NAV_ACTIONS.includes((filteredSymbols[index - 1] as any).action);
+
                   return (
-                    <button
-                      key={item.symbol + index}
-                      onClick={() => {
+                    <React.Fragment key={item.symbol + index}>
+                      {isNavAction && !prevIsNavAction && (
+                        <div className="flex items-center gap-3 px-4 md:px-6 py-2 mt-2 mb-1 select-none w-full">
+                          <div className="h-[1px] flex-1 bg-[#316995]/30"></div>
+                          <span className="text-[11px] font-bold tracking-wider uppercase text-[#86a8c3]">Navigation Actions</span>
+                          <div className="h-[1px] flex-1 bg-[#316995]/30"></div>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => {
                         if ((item as any).action === "raise_hand") {
                           setIsCommandPaletteOpen(false);
                           executeRaiseHand();
@@ -2552,6 +2907,33 @@ export default function App() {
                         } else if ((item as any).action === "start_group_work") {
                           setIsCommandPaletteOpen(false);
                           toggleGroupWork();
+                        } else if ((item as any).action === "insert_fraction") {
+                          setIsCommandPaletteOpen(false);
+                          setFractionNum("");
+                          setFractionDen("");
+                          setIsFractionDialogOpen(true);
+                          setTimeout(() => fractionNumRef.current?.focus(), 50);
+                        } else if ((item as any).action === "toggle_submission") {
+                          setIsCommandPaletteOpen(false);
+                          toggleSubmission();
+                        } else if ((item as any).action === "reset_next_user") {
+                          setIsCommandPaletteOpen(false);
+                          resetForNextUser();
+                        } else if ((item as any).action === "save_lesson") {
+                          setIsCommandPaletteOpen(false);
+                          saveLesson();
+                        } else if ((item as any).action === "refresh_equation") {
+                          setIsCommandPaletteOpen(false);
+                          refreshEquation();
+                        } else if ((item as any).action === "start_new_lesson") {
+                          setIsCommandPaletteOpen(false);
+                          startNewLesson();
+                        } else if ((item as any).action === "hear_explanation") {
+                          setIsCommandPaletteOpen(false);
+                          hearExplanation();
+                        } else if ((item as any).action === "next_question") {
+                          setIsCommandPaletteOpen(false);
+                          nextQuestion();
                         } else {
                           insertSymbol(item.symbol);
                         }
@@ -2584,6 +2966,7 @@ export default function App() {
                         </span>
                       )}
                     </button>
+                    </React.Fragment>
                   );
                 })}
               </div>
@@ -2661,6 +3044,77 @@ export default function App() {
               <span className="text-sm tracking-wide text-gray-500 font-medium">Peer-to-Peer Help Broadcast</span>
               <span className="text-xs tracking-wider text-gray-400 uppercase hidden sm:inline">Use arrows to select</span>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fraction Dialog Overlay */}
+      {isFractionDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] sm:pt-[15vh] bg-[#112a3d]/60 backdrop-blur-sm p-4">
+          <div
+            className="absolute inset-0"
+            onClick={() => setIsFractionDialogOpen(false)}
+          />
+          <div className="relative w-full max-w-[320px] bg-[#ffffff] rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col p-6 animate-in fade-in zoom-in-95">
+            <h3 className="text-xl font-bold text-[#112a3d] mb-4 text-center">Insert Fraction</h3>
+            <div className="flex flex-col items-center gap-3">
+              <input
+                ref={fractionNumRef}
+                value={fractionNum}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (/[A-Za-z]/.test(val)) {
+                    speakText("Please type a number. Current field: numerator.");
+                  } else {
+                    setFractionNum(val);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (fractionNum && fractionDen) {
+                      insertMultipleSymbols(Array.from(`${fractionNum}/${fractionDen}`));
+                      setIsFractionDialogOpen(false);
+                    } else {
+                      document.getElementById("frac-den")?.focus();
+                    }
+                  } else if (e.key === "Escape") {
+                    setIsFractionDialogOpen(false);
+                  }
+                }}
+                className="w-24 h-12 text-center text-xl font-medium border-2 border-gray-200 rounded-lg outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                placeholder="Num"
+                autoComplete="off"
+              />
+              <div className="w-24 h-1 bg-gray-300 rounded-full"></div>
+              <input
+                id="frac-den"
+                value={fractionDen}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (/[A-Za-z]/.test(val)) {
+                    speakText("Please type a number. Current field: denominator.");
+                  } else {
+                    setFractionDen(val);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (fractionNum && fractionDen) {
+                      insertMultipleSymbols(Array.from(`${fractionNum}/${fractionDen}`));
+                      setIsFractionDialogOpen(false);
+                    }
+                  } else if (e.key === "Escape") {
+                    setIsFractionDialogOpen(false);
+                  }
+                }}
+                className="w-24 h-12 text-center text-xl font-medium border-2 border-gray-200 rounded-lg outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                placeholder="Den"
+                autoComplete="off"
+              />
+            </div>
+            <p className="text-xs text-gray-500 text-center mt-5">Enter numbers and press Enter</p>
           </div>
         </div>
       )}
