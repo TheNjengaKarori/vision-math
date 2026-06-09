@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Search, Calculator, Volume2, Save, FilePlus, X, Hand, MessageSquare, RefreshCw, Send, PlayCircle, ArrowRight } from "lucide-react";
+import { Search, Calculator, Volume2, VolumeX, Save, FilePlus, X, Hand, MessageSquare, RefreshCw, Send, PlayCircle, ArrowRight } from "lucide-react";
 import { evaluate } from "mathjs";
+import { FloatingCalculator } from "./components/FloatingCalculator";
 import { TeacherFeedView } from "./components/TeacherFeedView";
 
 const playErrorSound = () => {
@@ -430,6 +431,21 @@ const MATH_SYMBOLS = [
     name: "Next Question",
     action: "next_question",
   },
+  {
+    symbol: "🔇",
+    name: "Toggle Audio Engine",
+    action: "toggle_mute",
+  },
+  {
+    symbol: "🎯",
+    name: "Focus Navbar",
+    action: "focus_navbar",
+  },
+  {
+    symbol: "🧮",
+    name: "Voice-Assisted Calculator (Alt + C)",
+    action: "open_calculator",
+  },
 ];
 
 const AUTOCOMPLETE_DICT = [
@@ -467,8 +483,11 @@ const NEMETH_DICT = [
 ];
 
 const HELP_MENU_ITEMS = [
+  { name: "Focus Navbar", shortcut: "Alt / Option + T", text: "To focus the main navigation bar: Alt T", action: "focus_navbar" },
+  { name: "Toggle Audio Engine", shortcut: "Ctrl / Cmd", text: "To toggle audio: Tap Control or Command", action: "toggle_mute" },
   { name: "Command Palette", shortcut: "Ctrl / Cmd + M", text: "To open the command palette: Control or Command, M", action: "command_palette" },
   { name: "Evaluate Math", shortcut: "Ctrl / Cmd + =", text: "To evaluate math: Control or Command, Equals", action: "evaluate_math" },
+  { name: "Calculator", shortcut: "Alt / Option + C", text: "To open voice-assisted calculator: Alt or Option, C", action: "open_calculator" },
   { name: "Raise Hand (Queue)", shortcut: "H H H", text: "To raise hand: press H three times quickly", action: "raise_hand" },
   { name: "Broadcast Line", shortcut: "B B B", text: "To broadcast line: press B three times quickly", action: "broadcast_line" },
   { name: "Pass Control (Group)", shortcut: "Ctrl / Cmd + P", text: "To pass control in group work: Control or Command, P", action: "pass_control" },
@@ -586,6 +605,11 @@ export default function App() {
   const [helpMenuSelectedIndex, setHelpMenuSelectedIndex] = useState(0);
   const helpMenuRef = useRef<HTMLDivElement>(null);
   const helpMenuInputRef = useRef<HTMLInputElement>(null);
+
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
+  const [calculatorInput, setCalculatorInput] = useState("");
+  const [calculatorResult, setCalculatorResult] = useState<string | null>(null);
+  const calculatorInputRef = useRef<HTMLInputElement>(null);
 
   const [isFractionDialogOpen, setIsFractionDialogOpen] = useState(false);
   const [fractionNum, setFractionNum] = useState("");
@@ -707,7 +731,57 @@ export default function App() {
     setComputeStatus("Equation refreshed.");
   };
 
+  const [isAudioMuted, setIsAudioMuted] = useState(false);
+  const isAudioMutedRef = useRef(isAudioMuted);
+  useEffect(() => {
+    isAudioMutedRef.current = isAudioMuted;
+  }, [isAudioMuted]);
+
+  const handleToolbarKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+      const target = e.target as HTMLElement;
+      
+      if (!e.altKey && target.tagName === "INPUT" && (target as HTMLInputElement).type !== "button" && (target as HTMLInputElement).type !== "date") {
+        const input = target as HTMLInputElement;
+        if (e.key === "ArrowLeft" && input.selectionStart !== null && input.selectionStart > 0) {
+          return; // Let caret move left
+        }
+        if (e.key === "ArrowRight" && input.selectionEnd !== null && input.selectionEnd < input.value.length) {
+          return; // Let caret move right
+        }
+      }
+
+      e.preventDefault();
+      const focusables = Array.from(
+        e.currentTarget.querySelectorAll<HTMLElement>('button, input')
+      ).filter(el => !el.hasAttribute('disabled') && el.offsetParent !== null && (el.tagName !== "INPUT" || (el as HTMLInputElement).type === "button" || (el as HTMLInputElement).type === "text" || (el as HTMLInputElement).type === "date"));
+      
+      let currentIndex = focusables.indexOf(target);
+      if (currentIndex === -1 && focusables.length > 0) currentIndex = 0;
+      
+      if (currentIndex > -1) {
+        let nextIndex = e.key === "ArrowRight" ? currentIndex + 1 : currentIndex - 1;
+        if (nextIndex >= focusables.length) nextIndex = 0;
+        if (nextIndex < 0) nextIndex = focusables.length - 1;
+
+        focusables.forEach((el, i) => {
+           el.tabIndex = (i === nextIndex) ? 0 : -1;
+        });
+        focusables[nextIndex].focus();
+      }
+    }
+    
+    if (e.key === "Enter" && e.altKey) {
+       const target = e.target as HTMLElement;
+       if (target.tagName === "BUTTON" || (target.tagName === "INPUT" && (target as HTMLInputElement).type === "button")) {
+         e.preventDefault();
+         target.click();
+       }
+    }
+  }, []);
+
   const speakText = useCallback((text: string) => {
+    if (isAudioMutedRef.current) return;
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       const speechText = text
@@ -1306,7 +1380,7 @@ export default function App() {
     speakText(`Worksheet: ${worksheet}. You are on Line ${currentLine} of ${totalLines}. Focused on column ${currentCol + 1}. ${lineInfo} ${cellInfo}`);
   }, [speakText]);
 
-  const NAV_ACTIONS = ['toggle_submission', 'reset_next_user', 'save_lesson', 'refresh_equation', 'start_new_lesson', 'hear_explanation', 'next_question'];
+  const NAV_ACTIONS = ['toggle_submission', 'reset_next_user', 'save_lesson', 'refresh_equation', 'start_new_lesson', 'hear_explanation', 'next_question', 'toggle_mute', 'focus_navbar', 'open_calculator'];
 
   const rawFilteredSymbols = paletteSearch ? MATH_SYMBOLS.filter((s) => {
     const term = paletteSearch.toLowerCase();
@@ -1338,6 +1412,9 @@ export default function App() {
     { symbol: "📄", name: "Start New Lesson", action: "start_new_lesson" },
     { symbol: "▶️", name: "Hear Explanation", action: "hear_explanation" },
     { symbol: "⏭️", name: "Next Question", action: "next_question" },
+    { symbol: "🔇", name: "Toggle Audio Engine", action: "toggle_mute" },
+    { symbol: "🎯", name: "Focus Navbar", action: "focus_navbar" },
+    { symbol: "🧮", name: "Voice-Assisted Calculator (Alt + C)", action: "open_calculator" },
   ];
 
   const filteredSymbols = [...rawFilteredSymbols].sort((a, b) => {
@@ -1348,8 +1425,79 @@ export default function App() {
     return 0;
   });
 
+  const ctrlPressedAt = useRef<number>(0);
+  const otherKeyPressed = useRef<boolean>(false);
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Control" || e.key === "Meta") {
+        if (ctrlPressedAt.current === 0) {
+          ctrlPressedAt.current = Date.now();
+          otherKeyPressed.current = false;
+        }
+      } else {
+        otherKeyPressed.current = true;
+      }
+    };
+    const handleGlobalKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "Control" || e.key === "Meta") {
+        if (!otherKeyPressed.current && ctrlPressedAt.current > 0 && Date.now() - ctrlPressedAt.current < 500) {
+          setIsAudioMuted(prev => !prev);
+          if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+        }
+        ctrlPressedAt.current = 0;
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown, { capture: true });
+    window.addEventListener('keyup', handleGlobalKeyUp, { capture: true });
+    return () => {
+      window.removeEventListener('keydown', handleGlobalKeyDown, { capture: true });
+      window.removeEventListener('keyup', handleGlobalKeyUp, { capture: true });
+    };
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Hush / Pause Audio instantly on Ctrl or Escape
+      if (e.key === "Control" || e.key === "Escape") {
+        if ("speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+        }
+      }
+
+      // Alt + C: Open/Close voice-assisted calculator
+      if (e.altKey && (e.key.toLowerCase() === "c" || e.code === "KeyC")) {
+        e.preventDefault();
+        setIsCalculatorOpen(prev => {
+          if (prev) {
+            speakText("Calculator closed");
+            setTimeout(() => document.getElementById("grid-input")?.focus(), 50);
+            return false;
+          } else {
+            return true;
+          }
+        });
+        return;
+      }
+
+      // Alt + T: Focus top navigation bar
+      if (e.altKey && (e.key.toLowerCase() === "t" || e.code === "KeyT")) {
+        e.preventDefault();
+        const toolbar = document.querySelector('[role="toolbar"]');
+        if (toolbar) {
+           const focusables = Array.from(
+             toolbar.querySelectorAll<HTMLElement>('button, input')
+           ).filter(el => !el.hasAttribute('disabled') && el.offsetParent !== null && (el.tagName !== "INPUT" || (el as HTMLInputElement).type === "button" || (el as HTMLInputElement).type === "text" || (el as HTMLInputElement).type === "date"));
+           
+           if (focusables.length > 0) {
+             const activeItem = focusables.find(el => el.tabIndex === 0) || focusables[0];
+             activeItem.focus();
+             speakText("Navbar focused. Use left and right arrow keys to navigate.");
+           }
+        }
+        return;
+      }
+
       // Save/Submit (Ctrl + S or Cmd + S)
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
@@ -1976,8 +2124,30 @@ export default function App() {
       const item = HELP_MENU_ITEMS[helpMenuSelectedIndex];
       if (item) {
         setIsHelpMenuOpen(false);
-        if (item.action === "command_palette") setIsCommandPaletteOpen(true);
+        if (item.action === "toggle_mute") {
+          setIsAudioMuted(prev => !prev);
+          if (!isAudioMuted && "speechSynthesis" in window) window.speechSynthesis.cancel();
+        } else if (item.action === "focus_navbar") {
+          setTimeout(() => {
+            const toolbar = document.querySelector('[role="toolbar"]');
+            if (toolbar) {
+               const focusables = Array.from(
+                 toolbar.querySelectorAll<HTMLElement>('button, input')
+               ).filter(el => !el.hasAttribute('disabled') && el.offsetParent !== null && (el.tagName !== "INPUT" || (el as HTMLInputElement).type === "button" || (el as HTMLInputElement).type === "text" || (el as HTMLInputElement).type === "date"));
+               
+               if (focusables.length > 0) {
+                 const activeItem = focusables.find(el => el.tabIndex === 0) || focusables[0];
+                 activeItem.focus();
+                 speakText("Navbar focused. Use left and right arrow keys to navigate.");
+               }
+            }
+          }, 50);
+        } else if (item.action === "command_palette") setIsCommandPaletteOpen(true);
         else if (item.action === "evaluate_math") executeEvaluateMath();
+        else if (item.action === "open_calculator") {
+           setIsCommandPaletteOpen(false);
+           setIsCalculatorOpen(true);
+        }
         else if (item.action === "raise_hand") executeRaiseHand();
         else if (item.action === "toggle_scratchpad") toggleScratchpad();
         else if (item.action === "context_locator") triggerContextLocator();
@@ -2198,12 +2368,18 @@ export default function App() {
             </button>
         </div>
 
-        <div className="flex justify-between items-center h-14 bg-[#163e5b] text-white px-2 border-b-2 border-transparent relative z-20">
-          <div className="flex items-center min-w-[20%] shrink">
+        <div 
+          className="flex justify-between items-center h-14 bg-[#163e5b] text-white px-2 border-b-2 border-transparent relative z-20"
+          role="toolbar"
+          aria-label="Main Toolbar"
+          onKeyDown={handleToolbarKeyDown}
+        >
+          <div className="flex items-center flex-1 min-w-0 pr-2">
             <button 
               onMouseEnter={() => speakText("Go back")}
               onFocus={() => speakText("Go back")}
-              className="hover:bg-white/10 rounded p-1 ml-1 cursor-pointer transition-colors focus:outline-none shrink-0"
+              className="hover:bg-white/10 rounded p-1 ml-1 cursor-pointer transition-colors focus:outline-none focus:ring-[8px] focus:ring-[#facc15] shrink-0"
+              tabIndex={0}
             >
               <svg
                 width="24"
@@ -2219,15 +2395,16 @@ export default function App() {
                 <path d="M15 18l-6-6 6-6" />
               </svg>
             </button>
-            <div className="flex items-center text-[13px] sm:text-[14px] tracking-wide font-medium space-x-1 sm:space-x-2 ml-2 min-w-0 flex-1 overflow-x-auto no-scrollbar mask-fade-right">
+            <div className="flex items-center text-[13px] sm:text-[14px] tracking-wide font-medium space-x-1 sm:space-x-2 ml-2 min-w-0 overflow-x-auto no-scrollbar mask-fade-right">
               <input
                 type="text"
                 value={className}
                 onChange={(e) => setClassName(e.target.value)}
                 readOnly={isSubmitted}
+                tabIndex={-1}
                 onMouseEnter={() => speakText(`Class: ${className}`)}
                 onFocus={() => speakText(`Class: ${className}`)}
-                className="bg-transparent outline-none w-[70px] sm:w-[90px] border-b border-transparent focus:border-white/50 px-1 py-0.5 rounded cursor-text hover:bg-white/5 transition-colors placeholder-[#b4c9da]/50 flex-shrink-0"
+                className="bg-transparent outline-none w-[70px] sm:w-[90px] border-b border-transparent focus:border-transparent focus:ring-[8px] focus:ring-[#facc15] px-1 py-0.5 rounded cursor-text hover:bg-white/5 transition-colors placeholder-[#b4c9da]/50 flex-shrink-0"
                 placeholder="Class"
               />
               <span className="text-[#316995] font-light flex-shrink-0">/</span>
@@ -2238,9 +2415,10 @@ export default function App() {
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   readOnly={isSubmitted}
+                  tabIndex={-1}
                   onMouseEnter={() => speakText(`Subject: ${subject}`)}
                   onFocus={() => speakText(`Subject: ${subject}`)}
-                  className="bg-transparent outline-none w-[80px] sm:w-[100px] border-b border-transparent focus:border-white/50 px-1 py-0.5 rounded cursor-text hover:bg-white/5 transition-colors placeholder-white uppercase tracking-widest text-[12px] sm:text-[13px] text-white font-semibold focus:text-white"
+                  className="bg-transparent outline-none w-[80px] sm:w-[100px] border-b border-transparent focus:border-transparent focus:ring-[8px] focus:ring-[#facc15] px-1 py-0.5 rounded cursor-text hover:bg-white/5 transition-colors placeholder-white uppercase tracking-widest text-[12px] sm:text-[13px] text-white font-semibold focus:text-white"
                   placeholder="SUBJECT"
                 />
               </div>
@@ -2251,9 +2429,10 @@ export default function App() {
                   value={lesson}
                   onChange={(e) => setLesson(e.target.value)}
                   readOnly={isSubmitted}
+                  tabIndex={-1}
                   onMouseEnter={() => speakText(`Lesson: ${lesson}`)}
                   onFocus={() => speakText(`Lesson: ${lesson}`)}
-                  className="bg-transparent outline-none min-w-[70px] max-w-[200px] px-2 py-0.5 cursor-text hover:bg-white/10 transition-colors placeholder-white/50 text-center text-white text-[12px] sm:text-[13px] tracking-widest uppercase box-content"
+                  className="bg-transparent outline-none min-w-[70px] max-w-[200px] px-2 py-0.5 cursor-text hover:bg-white/10 transition-colors placeholder-white/50 text-center text-white text-[12px] sm:text-[13px] tracking-widest uppercase box-content focus:ring-[8px] focus:ring-[#facc15] rounded"
                   style={{ width: `${Math.max(lesson.length, 6) * 1.1}ch` }}
                   placeholder="LESSON"
                 />
@@ -2293,19 +2472,35 @@ export default function App() {
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   disabled={isSubmitted}
+                  tabIndex={-1}
                   onMouseEnter={() => speakText(`Date: ${date}`)}
                   onFocus={() => speakText(`Date: ${date}`)}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full z-10"
+                  className="absolute inset-0 opacity-0 focus:opacity-100 focus:bg-[#163e5b] focus:text-white focus:ring-[8px] focus:ring-[#facc15] rounded outline-none cursor-pointer w-full z-10"
                 />
               </div>
             </div>
           </div>
 
-          <div className="absolute left-1/2 -translate-x-1/2 flex justify-center h-14 items-start pointer-events-none z-10 w-auto">
+          <div className="flex flex-col justify-center items-center pointer-events-none z-10 w-auto gap-1 relative shrink-0 mx-2">
+             <button
+               onClick={() => {
+                  setIsAudioMuted(!isAudioMuted);
+                  if (!isAudioMuted && "speechSynthesis" in window) {
+                    window.speechSynthesis.cancel();
+                  }
+               }}
+               aria-pressed={isAudioMuted}
+               tabIndex={-1}
+               className={`pointer-events-auto flex items-center justify-center gap-1.5 h-8 px-3 rounded-md font-bold text-sm tracking-wide outline-none transition-all focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] bg-[#FFFF00] text-black hover:bg-[#e6e600]`}
+             >
+                {!isAudioMuted ? <Volume2 size={16} className="shrink-0" /> : <VolumeX size={16} className="shrink-0" />}
+                <span className="whitespace-nowrap shrink-0">{!isAudioMuted ? "ON" : "MUTED"}</span>
+             </button>
             {broadcastReply && !isScratchpadOpen && (
               <button
                 onClick={() => toggleScratchpad()}
-                className="mt-2 text-sm font-bold animate-pulse px-4 py-1.5 rounded-full bg-cyan-900/50 text-cyan-300 border border-cyan-400/50 hover:bg-cyan-800/80 hover:text-white pointer-events-auto shadow-[0_0_15px_rgba(34,211,238,0.3)] backdrop-blur-md transition-all flex items-center gap-2"
+                tabIndex={-1}
+                className="absolute top-12 text-sm font-bold animate-pulse px-4 py-1.5 rounded-full bg-cyan-900/50 text-cyan-300 border border-cyan-400/50 hover:bg-cyan-800/80 hover:text-white pointer-events-auto shadow-[0_0_15px_rgba(34,211,238,0.3)] backdrop-blur-md transition-all flex items-center gap-2 whitespace-nowrap"
               >
                 <MessageSquare size={16} className="text-cyan-400" />
                 Reply from {broadcastReply.student}
@@ -2313,34 +2508,34 @@ export default function App() {
             )}
           </div>
 
-          <div className="flex justify-end gap-1 sm:gap-2 px-1 sm:px-2 items-center overflow-x-auto no-scrollbar shrink-0 ml-auto max-w-[100%]">
+          <div className="flex justify-end gap-1 sm:gap-2 px-1 sm:px-2 items-center overflow-x-auto no-scrollbar flex-1 min-w-0">
             <div className="flex gap-0.5 sm:gap-2 items-center flex-nowrap">
               <button
                 onClick={executeRaiseHand}
+                tabIndex={-1}
                 onMouseEnter={() => speakText("Raise Hand for help")}
                 onFocus={() => speakText("Raise Hand for help")}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-2 focus:ring-white/20 whitespace-nowrap shrink-0"
-                title="Raise hand to request help"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
               >
                 <Hand size={18} />
                 <span className="hidden xl:inline">Hand</span>
               </button>
               <button
                 onClick={refreshEquation}
+                tabIndex={-1}
                 onMouseEnter={() => speakText("Refresh to default equation")}
                 onFocus={() => speakText("Refresh to default equation")}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-2 focus:ring-white/20 whitespace-nowrap shrink-0"
-                title="Refresh equation"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
               >
                 <RefreshCw size={18} />
                 <span className="hidden xl:inline">Refresh</span>
               </button>
               <button
                 onClick={startNewLesson}
+                tabIndex={-1}
                 onMouseEnter={() => speakText("Start a new lesson")}
                 onFocus={() => speakText("Start a new lesson")}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-2 focus:ring-white/20 whitespace-nowrap shrink-0"
-                title="Start a new lesson"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
               >
                 <FilePlus size={18} />
                 <span className="hidden xl:inline">New</span>
@@ -2352,9 +2547,10 @@ export default function App() {
                 <>
                   <button
                     onClick={hearExplanation}
+                    tabIndex={-1}
                     onMouseEnter={() => speakText("Hear explanation of your work")}
                     onFocus={() => speakText("Hear explanation of your work")}
-                    className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 border border-transparent hover:border-blue-300 text-[13px] lg:text-sm font-medium transition-all text-white shadow-sm outline-none focus:ring-2 focus:ring-white/20 whitespace-nowrap shrink-0"
+                    className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 border border-transparent hover:border-blue-300 text-[13px] lg:text-sm font-medium transition-all text-white shadow-sm outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
                     title="Hear explanation of your work"
                   >
                     <PlayCircle size={18} />
@@ -2362,9 +2558,10 @@ export default function App() {
                   </button>
                   <button
                     onClick={nextQuestion}
+                    tabIndex={-1}
                     onMouseEnter={() => speakText("Proceed to next question")}
                     onFocus={() => speakText("Proceed to next question")}
-                    className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-green-600 hover:bg-green-500 border border-transparent hover:border-green-300 text-[13px] lg:text-sm font-medium transition-all text-white shadow-sm outline-none focus:ring-2 focus:ring-white/20 whitespace-nowrap shrink-0"
+                    className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-green-600 hover:bg-green-500 border border-transparent hover:border-green-300 text-[13px] lg:text-sm font-medium transition-all text-white shadow-sm outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
                     title="Proceed to next question"
                   >
                     <ArrowRight size={18} />
@@ -2375,9 +2572,10 @@ export default function App() {
                 <>
                   <button
                     onClick={resetForNextUser}
+                    tabIndex={-1}
                     onMouseEnter={() => speakText("Press Control+R or command+R to clear all inputs for the next student.")}
                     onFocus={() => speakText("Press Control+R or command+R to clear all inputs for the next student.")}
-                    className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-red-500/20 border border-transparent text-[13px] lg:text-sm font-medium transition-all text-red-400 hover:text-red-300 outline-none focus:ring-2 focus:ring-red-400/50 whitespace-nowrap shrink-0"
+                    className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-red-500/20 border border-transparent text-[13px] lg:text-sm font-medium transition-all text-red-400 hover:text-red-300 outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
                     title="Reset for next user"
                   >
                     <RefreshCw size={18} />
@@ -2385,9 +2583,10 @@ export default function App() {
                   </button>
                   <button
                     onClick={saveLesson}
+                    tabIndex={-1}
                     onMouseEnter={() => speakText("Save current lesson")}
                     onFocus={() => speakText("Save current lesson")}
-                    className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-[13px] lg:text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-2 focus:ring-white/20 whitespace-nowrap shrink-0"
+                    className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-[13px] lg:text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
                     title="Save current lesson"
                   >
                     <Save size={18} />
@@ -2395,9 +2594,10 @@ export default function App() {
                   </button>
                   <button
                     onClick={toggleSubmission}
+                    tabIndex={-1}
                     onMouseEnter={() => speakText("Submit assignment. Shortcut is Command or Control S.")}
                     onFocus={() => speakText("Submit assignment. Shortcut is Command or Control S.")}
-                    className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-cyan-600 hover:bg-cyan-500 border border-transparent hover:border-cyan-300 text-[13px] lg:text-sm font-medium transition-all text-white shadow-sm outline-none focus:ring-2 focus:ring-white/20 whitespace-nowrap shrink-0"
+                    className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-cyan-600 hover:bg-cyan-500 border border-transparent hover:border-cyan-300 text-[13px] lg:text-sm font-medium transition-all text-white shadow-sm outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
                     title="Submit assignment"
                   >
                     <Send size={18} />
@@ -2410,9 +2610,10 @@ export default function App() {
 
               <button
                 onClick={() => setIsCommandPaletteOpen(true)}
+                tabIndex={-1}
                 onMouseEnter={() => speakText("Open Math Tool Palette. Shortcut is Command or Control K.")}
                 onFocus={() => speakText("Open Math Tool Palette. Shortcut is Command or Control K.")}
-                className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-[13px] lg:text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-2 focus:ring-white/20 whitespace-nowrap shrink-0"
+                className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-[13px] lg:text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
                 title="Open Math Tool Palette"
               >
                 <Calculator size={18} />
@@ -2447,7 +2648,7 @@ export default function App() {
           >
             <div className="max-w-3xl mx-auto space-y-6 text-[#b4c9da]">
               <div className="flex items-center gap-3 text-blue-400">
-                <h2 className="text-sm font-bold uppercase tracking-widest text-[#316995]">Module 4: Operations</h2>
+                <h2 className="text-sm font-bold uppercase tracking-widest text-[#ffffff]">Module 4: Operations</h2>
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">The Rules of Integers</h1>
@@ -2831,12 +3032,12 @@ export default function App() {
 
       {/* Command Palette Overlay */}
       {isCommandPaletteOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] sm:pt-[15vh] bg-[#112a3d]/60 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-start sm:items-center sm:pt-[15vh] bg-[#112a3d]/80 sm:bg-[#112a3d]/60 backdrop-blur-sm sm:p-4">
           <div
             className="absolute inset-0"
             onClick={() => setIsCommandPaletteOpen(false)}
           />
-          <div className="relative w-full max-w-2xl bg-[#0c1f2e] rounded-2xl shadow-2xl border border-[#316995] overflow-hidden flex flex-col max-h-[70vh]">
+          <div className="relative w-full sm:max-w-2xl bg-[#0c1f2e] sm:rounded-2xl shadow-2xl border-t sm:border border-[#316995] overflow-hidden flex flex-col max-h-[60vh] sm:max-h-[70vh]">
             <div className="flex items-center px-4 md:px-6 border-b border-[#316995]/30 bg-[#112a3d]">
               <Search
                 size={20}
@@ -2934,6 +3135,31 @@ export default function App() {
                         } else if ((item as any).action === "next_question") {
                           setIsCommandPaletteOpen(false);
                           nextQuestion();
+                        } else if ((item as any).action === "toggle_mute") {
+                          setIsCommandPaletteOpen(false);
+                          setIsAudioMuted(prev => !prev);
+                          if (!isAudioMutedRef.current && "speechSynthesis" in window) {
+                             window.speechSynthesis.cancel();
+                          }
+                        } else if ((item as any).action === "open_calculator") {
+                          setIsCommandPaletteOpen(false);
+                          setIsCalculatorOpen(true);
+                        } else if ((item as any).action === "focus_navbar") {
+                          setIsCommandPaletteOpen(false);
+                          setTimeout(() => {
+                            const toolbar = document.querySelector('[role="toolbar"]');
+                            if (toolbar) {
+                               const focusables = Array.from(
+                                 toolbar.querySelectorAll<HTMLElement>('button, input')
+                               ).filter(el => !el.hasAttribute('disabled') && el.offsetParent !== null && (el.tagName !== "INPUT" || (el as HTMLInputElement).type === "button" || (el as HTMLInputElement).type === "text" || (el as HTMLInputElement).type === "date"));
+                               
+                               if (focusables.length > 0) {
+                                 const activeItem = focusables.find(el => el.tabIndex === 0) || focusables[0];
+                                 activeItem.focus();
+                                 speakText("Navbar focused. Use left and right arrow keys to navigate.");
+                               }
+                            }
+                          }, 50);
                         } else {
                           insertSymbol(item.symbol);
                         }
@@ -2976,12 +3202,12 @@ export default function App() {
       )}
       {/* Broadcast Dialog Overlay */}
       {isBroadcastPaletteOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] sm:pt-[15vh] bg-[#112a3d]/60 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-start sm:items-center sm:pt-[15vh] bg-[#112a3d]/80 sm:bg-[#112a3d]/60 backdrop-blur-sm sm:p-4">
           <div
             className="absolute inset-0"
             onClick={() => setIsBroadcastPaletteOpen(false)}
           />
-          <div className="relative w-full max-w-2xl bg-[#ffffff] rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[70vh]">
+          <div className="relative w-full sm:max-w-2xl bg-[#ffffff] sm:rounded-2xl shadow-2xl border-t sm:border border-gray-100 overflow-hidden flex flex-col max-h-[60vh] sm:max-h-[70vh]">
             <div className="flex items-center px-4 md:px-6 border-b border-gray-100 bg-white">
               <input
                 ref={broadcastInputRef}
@@ -3119,14 +3345,41 @@ export default function App() {
         </div>
       )}
 
+      {/* Calculator Overlay */}
+      <FloatingCalculator
+        isOpen={isCalculatorOpen}
+        onClose={() => {
+          setIsCalculatorOpen(false);
+          speakText("Calculator closed");
+          setTimeout(() => document.getElementById("grid-input")?.focus(), 50);
+        }}
+        speakText={speakText}
+        onInsert={(value) => {
+          const chars = Array.from(String(value));
+          setGridData((prev) => {
+            const next = { ...prev };
+            let currentC = activeCell.c;
+            chars.forEach((c) => {
+              next[`${activeCell.r},${currentC}`] = c;
+              currentC++;
+            });
+            return next;
+          });
+          setActiveCell((prev) => ({ ...prev, c: prev.c + chars.length }));
+          setIsCalculatorOpen(false);
+          speakText(`${value} inserted to canvas`);
+          setTimeout(() => document.getElementById("grid-input")?.focus(), 50);
+        }}
+      />
+
       {/* Help Menu Overlay */}
       {isHelpMenuOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] sm:pt-[15vh] bg-[#112a3d]/60 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-start sm:items-center sm:pt-[15vh] bg-[#112a3d]/80 sm:bg-[#112a3d]/60 backdrop-blur-sm sm:p-4">
           <div
             className="absolute inset-0"
             onClick={() => setIsHelpMenuOpen(false)}
           />
-          <div className="relative w-full max-w-2xl bg-[#ffffff] rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[70vh]">
+          <div className="relative w-full sm:max-w-2xl bg-[#ffffff] sm:rounded-2xl shadow-2xl border-t sm:border border-gray-100 overflow-hidden flex flex-col max-h-[60vh] sm:max-h-[70vh]">
             <div className="flex items-center px-4 md:px-6 border-b border-gray-100 bg-white">
               <input
                 ref={helpMenuInputRef}
@@ -3162,8 +3415,30 @@ export default function App() {
                     key={item.action + index}
                     onClick={() => {
                       setIsHelpMenuOpen(false);
-                      if (item.action === "command_palette") setIsCommandPaletteOpen(true);
+                      if (item.action === "toggle_mute") {
+                        setIsAudioMuted(prev => !prev);
+                        if (!isAudioMuted && "speechSynthesis" in window) window.speechSynthesis.cancel();
+                      } else if (item.action === "focus_navbar") {
+                        setTimeout(() => {
+                          const toolbar = document.querySelector('[role="toolbar"]');
+                          if (toolbar) {
+                             const focusables = Array.from(
+                               toolbar.querySelectorAll<HTMLElement>('button, input')
+                             ).filter(el => !el.hasAttribute('disabled') && el.offsetParent !== null && (el.tagName !== "INPUT" || (el as HTMLInputElement).type === "button" || (el as HTMLInputElement).type === "text" || (el as HTMLInputElement).type === "date"));
+                             
+                             if (focusables.length > 0) {
+                               const activeItem = focusables.find(el => el.tabIndex === 0) || focusables[0];
+                               activeItem.focus();
+                               speakText("Navbar focused. Use left and right arrow keys to navigate.");
+                             }
+                          }
+                        }, 50);
+                      } else if (item.action === "command_palette") setIsCommandPaletteOpen(true);
                       else if (item.action === "evaluate_math") executeEvaluateMath();
+                      else if (item.action === "open_calculator") {
+                         setIsCommandPaletteOpen(false);
+                         setIsCalculatorOpen(true);
+                      }
                       else if (item.action === "raise_hand") executeRaiseHand();
                       else if (item.action === "toggle_scratchpad") toggleScratchpad();
                       else if (item.action === "context_locator") triggerContextLocator();
