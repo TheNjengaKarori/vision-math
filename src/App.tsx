@@ -1,5 +1,19 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Search, Calculator, Volume2, VolumeX, Save, FilePlus, X, Hand, MessageSquare, RefreshCw, Send, PlayCircle, ArrowRight } from "lucide-react";
+import {
+  Search,
+  Calculator,
+  Volume2,
+  VolumeX,
+  Save,
+  FilePlus,
+  X,
+  Hand,
+  MessageSquare,
+  RefreshCw,
+  Send,
+  PlayCircle,
+  ArrowRight,
+} from "lucide-react";
 import { evaluate } from "mathjs";
 import { FloatingCalculator } from "./components/FloatingCalculator";
 import { TeacherFeedView } from "./components/TeacherFeedView";
@@ -139,7 +153,7 @@ const playAlertSound = () => {
     const audioCtx = new (
       window.AudioContext || (window as any).webkitAudioContext
     )();
-    
+
     // Tone 1
     const osc1 = audioCtx.createOscillator();
     const gain1 = audioCtx.createGain();
@@ -175,17 +189,17 @@ const playBellSound = () => {
     )();
     const osc = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
-    
+
     osc.type = "sine";
     osc.frequency.setValueAtTime(800, audioCtx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 1);
-    
+
     gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
-    
+
     osc.connect(gainNode);
     gainNode.connect(audioCtx.destination);
-    
+
     osc.start();
     osc.stop(audioCtx.currentTime + 1);
   } catch (e) {
@@ -198,7 +212,7 @@ const playDoorbellSound = () => {
     const audioCtx = new (
       window.AudioContext || (window as any).webkitAudioContext
     )();
-    
+
     // Ding
     const osc1 = audioCtx.createOscillator();
     const gain1 = audioCtx.createGain();
@@ -232,7 +246,7 @@ const playWhooshLockSound = () => {
     const audioCtx = new (
       window.AudioContext || (window as any).webkitAudioContext
     )();
-    
+
     // Whoosh
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
@@ -242,7 +256,7 @@ const playWhooshLockSound = () => {
     gain.gain.setValueAtTime(0, audioCtx.currentTime);
     gain.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.15);
     gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
-    
+
     // Lock click
     const osc2 = audioCtx.createOscillator();
     const gain2 = audioCtx.createGain();
@@ -271,7 +285,7 @@ const playWhooshUnlockSound = () => {
     const audioCtx = new (
       window.AudioContext || (window as any).webkitAudioContext
     )();
-    
+
     // Unlock click
     const osc2 = audioCtx.createOscillator();
     const gain2 = audioCtx.createGain();
@@ -286,11 +300,14 @@ const playWhooshUnlockSound = () => {
     const gain = audioCtx.createGain();
     osc.type = "sine";
     osc.frequency.setValueAtTime(100, audioCtx.currentTime + 0.05);
-    osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.35);
+    osc.frequency.exponentialRampToValueAtTime(
+      400,
+      audioCtx.currentTime + 0.35,
+    );
     gain.gain.setValueAtTime(0, audioCtx.currentTime + 0.05);
     gain.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.2);
     gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.35);
-    
+
     osc2.connect(gain2);
     gain2.connect(audioCtx.destination);
     osc2.start(audioCtx.currentTime);
@@ -316,7 +333,10 @@ const playPingSound = () => {
     osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
     osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.5); // A4
     gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+    gainNode.gain.exponentialRampToValueAtTime(
+      0.01,
+      audioCtx.currentTime + 0.5,
+    );
     osc.connect(gainNode);
     gainNode.connect(audioCtx.destination);
     osc.start();
@@ -483,19 +503,84 @@ const NEMETH_DICT = [
 ];
 
 const HELP_MENU_ITEMS = [
-  { name: "Focus Navbar", shortcut: "Alt / Option + T", text: "To focus the main navigation bar: Alt T", action: "focus_navbar" },
-  { name: "Toggle Audio Engine", shortcut: "Ctrl / Cmd", text: "To toggle audio: Tap Control or Command", action: "toggle_mute" },
-  { name: "Command Palette", shortcut: "Ctrl / Cmd + M", text: "To open the command palette: Control or Command, M", action: "command_palette" },
-  { name: "Evaluate Math", shortcut: "Ctrl / Cmd + =", text: "To evaluate math: Control or Command, Equals", action: "evaluate_math" },
-  { name: "Calculator", shortcut: "Alt / Option + C", text: "To open voice-assisted calculator: Alt or Option, C", action: "open_calculator" },
-  { name: "Raise Hand (Queue)", shortcut: "H H H", text: "To raise hand: press H three times quickly", action: "raise_hand" },
-  { name: "Broadcast Line", shortcut: "B B B", text: "To broadcast line: press B three times quickly", action: "broadcast_line" },
-  { name: "Pass Control (Group)", shortcut: "Ctrl / Cmd + P", text: "To pass control in group work: Control or Command, P", action: "pass_control" },
-  { name: "Toggle Scratchpad (Rough Work)", shortcut: "Alt / Opt + R", text: "To open rough work: Alt or Option, R", action: "toggle_scratchpad" },
-  { name: "Where Am I? Context Locator", shortcut: "Double Shift", text: "For context locator: Double-click Shift", action: "context_locator" },
-  { name: "Undo", shortcut: "Ctrl / Cmd + Z", text: "To undo: Control or Command, Z", action: "undo" },
-  { name: "Redo", shortcut: "Ctrl / Cmd + Y", text: "To redo: Control or Command, Y", action: "redo" },
-  { name: "Help Menu", shortcut: "Shift + ?", text: "To open this help menu: Shift, Question Mark", action: "help_menu" },
+  {
+    name: "Focus Navbar",
+    shortcut: "Alt / Option + T",
+    text: "To focus the main navigation bar: Alt T",
+    action: "focus_navbar",
+  },
+  {
+    name: "Toggle Audio Engine",
+    shortcut: "Ctrl / Cmd",
+    text: "To toggle audio: Tap Control or Command",
+    action: "toggle_mute",
+  },
+  {
+    name: "Command Palette",
+    shortcut: "Ctrl / Cmd + M",
+    text: "To open the command palette: Control or Command, M",
+    action: "command_palette",
+  },
+  {
+    name: "Evaluate Math",
+    shortcut: "Ctrl / Cmd + =",
+    text: "To evaluate math: Control or Command, Equals",
+    action: "evaluate_math",
+  },
+  {
+    name: "Calculator",
+    shortcut: "Alt / Option + C",
+    text: "To open voice-assisted calculator: Alt or Option, C",
+    action: "open_calculator",
+  },
+  {
+    name: "Raise Hand (Queue)",
+    shortcut: "H H H",
+    text: "To raise hand: press H three times quickly",
+    action: "raise_hand",
+  },
+  {
+    name: "Broadcast Line",
+    shortcut: "B B B",
+    text: "To broadcast line: press B three times quickly",
+    action: "broadcast_line",
+  },
+  {
+    name: "Pass Control (Group)",
+    shortcut: "Ctrl / Cmd + P",
+    text: "To pass control in group work: Control or Command, P",
+    action: "pass_control",
+  },
+  {
+    name: "Toggle Scratchpad (Rough Work)",
+    shortcut: "Alt / Opt + R",
+    text: "To open rough work: Alt or Option, R",
+    action: "toggle_scratchpad",
+  },
+  {
+    name: "Where Am I? Context Locator",
+    shortcut: "Double Shift",
+    text: "For context locator: Double-click Shift",
+    action: "context_locator",
+  },
+  {
+    name: "Undo",
+    shortcut: "Ctrl / Cmd + Z",
+    text: "To undo: Control or Command, Z",
+    action: "undo",
+  },
+  {
+    name: "Redo",
+    shortcut: "Ctrl / Cmd + Y",
+    text: "To redo: Control or Command, Y",
+    action: "redo",
+  },
+  {
+    name: "Help Menu",
+    shortcut: "Shift + ?",
+    text: "To open this help menu: Shift, Question Mark",
+    action: "help_menu",
+  },
 ];
 
 interface MathBlock {
@@ -589,13 +674,16 @@ export default function App() {
   const dateInputRef = useRef<HTMLInputElement>(null);
 
   const [activeCell, setActiveCell] = useState({ r: 0, c: defaultEq.length });
-  const [gridData, setGridData] = useState<Record<string, string>>(defaultGridData);
+  const [gridData, setGridData] =
+    useState<Record<string, string>>(defaultGridData);
   const [bgType, setBgType] = useState<"grid" | "blank">("grid");
 
-  const [currentView, setCurrentView] = useState<"student" | "teacher">("student");
+  const [currentView, setCurrentView] = useState<"student" | "teacher">(
+    "student",
+  );
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [missingPingAlert, setMissingPingAlert] = useState(false);
-  
+
   const [isGroupWork, setIsGroupWork] = useState(false);
   const [hasControl, setHasControl] = useState(true);
   const [activePeer, setActivePeer] = useState("Amina");
@@ -618,10 +706,19 @@ export default function App() {
 
   const [isBroadcastPaletteOpen, setIsBroadcastPaletteOpen] = useState(false);
   const [broadcastSelectedIndex, setBroadcastSelectedIndex] = useState(0);
-  const broadcastStudentList = ["Amina", "David Ochieng", "Sarah Njoroge", "John Doe"];
+  const broadcastStudentList = [
+    "Amina",
+    "David Ochieng",
+    "Sarah Njoroge",
+    "John Doe",
+  ];
   const broadcastInputRef = useRef<HTMLInputElement>(null);
   const broadcastRef = useRef<HTMLDivElement>(null);
-  const [broadcastReply, setBroadcastReply] = useState<{ student: string, lineText: string, mockFeedback: string } | null>(null);
+  const [broadcastReply, setBroadcastReply] = useState<{
+    student: string;
+    lineText: string;
+    mockFeedback: string;
+  } | null>(null);
 
   interface RaisedHand {
     id: string;
@@ -630,8 +727,18 @@ export default function App() {
     currentLineText?: string;
   }
   const [queue, setQueue] = useState<RaisedHand[]>([
-    { id: "mock_1", name: "Amina Hassan", timestamp: "5 mins ago", currentLineText: "3x - 6 = 9" },
-    { id: "mock_2", name: "Brian Ochieng", timestamp: "2 mins ago", currentLineText: "y = 3" }
+    {
+      id: "mock_1",
+      name: "Amina Hassan",
+      timestamp: "5 mins ago",
+      currentLineText: "3x - 6 = 9",
+    },
+    {
+      id: "mock_2",
+      name: "Brian Ochieng",
+      timestamp: "2 mins ago",
+      currentLineText: "y = 3",
+    },
   ]);
   const [teacherReadyAlert, setTeacherReadyAlert] = useState<boolean>(false);
 
@@ -690,16 +797,41 @@ export default function App() {
     blocks: [] as MathBlock[],
   });
 
-  const [inputError, setInputError] = useState<{r: number, c: number} | null>(null);
+  const [inputError, setInputError] = useState<{ r: number; c: number } | null>(
+    null,
+  );
 
   const historyRef = useRef<{
-    main: { gridData: Record<string, string>; activeCell: { r: number; c: number }; desc: string }[];
-    scratch: { gridData: Record<string, string>; activeCell: { r: number; c: number }; desc: string }[];
+    main: {
+      gridData: Record<string, string>;
+      activeCell: { r: number; c: number };
+      desc: string;
+    }[];
+    scratch: {
+      gridData: Record<string, string>;
+      activeCell: { r: number; c: number };
+      desc: string;
+    }[];
   }>({
-    main: [{ gridData: {}, activeCell: { r: 0, c: 0 }, desc: "Initial empty worksheet" }],
-    scratch: [{ gridData: {}, activeCell: { r: 0, c: 0 }, desc: "Initial empty scratchpad" }],
+    main: [
+      {
+        gridData: {},
+        activeCell: { r: 0, c: 0 },
+        desc: "Initial empty worksheet",
+      },
+    ],
+    scratch: [
+      {
+        gridData: {},
+        activeCell: { r: 0, c: 0 },
+        desc: "Initial empty scratchpad",
+      },
+    ],
   });
-  const historyIndexRef = useRef<{ main: number; scratch: number }>({ main: 0, scratch: 0 });
+  const historyIndexRef = useRef<{ main: number; scratch: number }>({
+    main: 0,
+    scratch: 0,
+  });
   const isUndoRedoActionRef = useRef(false);
 
   const consecutiveRCount = useRef(0);
@@ -731,54 +863,83 @@ export default function App() {
     setComputeStatus("Equation refreshed.");
   };
 
-  const [isAudioMuted, setIsAudioMuted] = useState(false);
+  const [isAudioMuted, setIsAudioMuted] = useState(true);
   const isAudioMutedRef = useRef(isAudioMuted);
   useEffect(() => {
     isAudioMutedRef.current = isAudioMuted;
   }, [isAudioMuted]);
 
-  const handleToolbarKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
-      const target = e.target as HTMLElement;
-      
-      if (!e.altKey && target.tagName === "INPUT" && (target as HTMLInputElement).type !== "button" && (target as HTMLInputElement).type !== "date") {
-        const input = target as HTMLInputElement;
-        if (e.key === "ArrowLeft" && input.selectionStart !== null && input.selectionStart > 0) {
-          return; // Let caret move left
+  const handleToolbarKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        const target = e.target as HTMLElement;
+
+        if (
+          !e.altKey &&
+          target.tagName === "INPUT" &&
+          (target as HTMLInputElement).type !== "button" &&
+          (target as HTMLInputElement).type !== "date"
+        ) {
+          const input = target as HTMLInputElement;
+          if (
+            e.key === "ArrowLeft" &&
+            input.selectionStart !== null &&
+            input.selectionStart > 0
+          ) {
+            return; // Let caret move left
+          }
+          if (
+            e.key === "ArrowRight" &&
+            input.selectionEnd !== null &&
+            input.selectionEnd < input.value.length
+          ) {
+            return; // Let caret move right
+          }
         }
-        if (e.key === "ArrowRight" && input.selectionEnd !== null && input.selectionEnd < input.value.length) {
-          return; // Let caret move right
+
+        e.preventDefault();
+        const focusables = Array.from(
+          e.currentTarget.querySelectorAll<HTMLElement>("button, input"),
+        ).filter(
+          (el) =>
+            !el.hasAttribute("disabled") &&
+            el.offsetParent !== null &&
+            (el.tagName !== "INPUT" ||
+              (el as HTMLInputElement).type === "button" ||
+              (el as HTMLInputElement).type === "text" ||
+              (el as HTMLInputElement).type === "date"),
+        );
+
+        let currentIndex = focusables.indexOf(target);
+        if (currentIndex === -1 && focusables.length > 0) currentIndex = 0;
+
+        if (currentIndex > -1) {
+          let nextIndex =
+            e.key === "ArrowRight" ? currentIndex + 1 : currentIndex - 1;
+          if (nextIndex >= focusables.length) nextIndex = 0;
+          if (nextIndex < 0) nextIndex = focusables.length - 1;
+
+          focusables.forEach((el, i) => {
+            el.tabIndex = i === nextIndex ? 0 : -1;
+          });
+          focusables[nextIndex].focus();
         }
       }
 
-      e.preventDefault();
-      const focusables = Array.from(
-        e.currentTarget.querySelectorAll<HTMLElement>('button, input')
-      ).filter(el => !el.hasAttribute('disabled') && el.offsetParent !== null && (el.tagName !== "INPUT" || (el as HTMLInputElement).type === "button" || (el as HTMLInputElement).type === "text" || (el as HTMLInputElement).type === "date"));
-      
-      let currentIndex = focusables.indexOf(target);
-      if (currentIndex === -1 && focusables.length > 0) currentIndex = 0;
-      
-      if (currentIndex > -1) {
-        let nextIndex = e.key === "ArrowRight" ? currentIndex + 1 : currentIndex - 1;
-        if (nextIndex >= focusables.length) nextIndex = 0;
-        if (nextIndex < 0) nextIndex = focusables.length - 1;
-
-        focusables.forEach((el, i) => {
-           el.tabIndex = (i === nextIndex) ? 0 : -1;
-        });
-        focusables[nextIndex].focus();
+      if (e.key === "Enter" && e.altKey) {
+        const target = e.target as HTMLElement;
+        if (
+          target.tagName === "BUTTON" ||
+          (target.tagName === "INPUT" &&
+            (target as HTMLInputElement).type === "button")
+        ) {
+          e.preventDefault();
+          target.click();
+        }
       }
-    }
-    
-    if (e.key === "Enter" && e.altKey) {
-       const target = e.target as HTMLElement;
-       if (target.tagName === "BUTTON" || (target.tagName === "INPUT" && (target as HTMLInputElement).type === "button")) {
-         e.preventDefault();
-         target.click();
-       }
-    }
-  }, []);
+    },
+    [],
+  );
 
   const speakText = useCallback((text: string) => {
     if (isAudioMutedRef.current) return;
@@ -809,7 +970,8 @@ export default function App() {
   }, [speakText]);
 
   const giveHint = useCallback(() => {
-    const hint = "Hint: Remember the rules of integers. Adding a negative is like subtracting a positive. Try evaluating 5 minus 3.";
+    const hint =
+      "Hint: Remember the rules of integers. Adding a negative is like subtracting a positive. Try evaluating 5 minus 3.";
     setComputeStatus(hint);
     speakText(hint);
   }, [speakText]);
@@ -824,7 +986,7 @@ export default function App() {
     const newEq = "2x - 8 = 12";
     const newGrid: Record<string, string> = {};
     for (let i = 0; i < newEq.length; i++) {
-        newGrid[`0,${i}`] = newEq[i];
+      newGrid[`0,${i}`] = newEq[i];
     }
     setGridData(newGrid);
     setBlocks([]);
@@ -852,14 +1014,14 @@ export default function App() {
         lines.push(`Line ${r + 1}: ${lineText}`);
       }
     }
-    
+
     let explanationText = "";
     if (lines.length > 0) {
       explanationText = `Here is the explanation of your work. ${lines.join(". Next step: ")}`;
     } else {
       explanationText = "There is no work to explain.";
     }
-    
+
     speakText(explanationText);
     setComputeStatus("Playing explanation.");
   }, [gridData, speakText]);
@@ -868,8 +1030,10 @@ export default function App() {
     if (isScratchpadOpen && broadcastReply) {
       // Small delay to let the "Scratchpad open" message finish or interrupt it smoothly
       setTimeout(() => {
-        speakText(`Peer Reply from ${broadcastReply.student}: ${broadcastReply.lineText}. Note: ${broadcastReply.mockFeedback}`);
-      }, 1000); 
+        speakText(
+          `Peer Reply from ${broadcastReply.student}: ${broadcastReply.lineText}. Note: ${broadcastReply.mockFeedback}`,
+        );
+      }, 1000);
     }
   }, [isScratchpadOpen, broadcastReply, speakText]);
 
@@ -885,50 +1049,64 @@ export default function App() {
   const executeRaiseHand = useCallback(() => {
     const currentR = activeCellRef.current.r;
     const currentLineText = Object.keys(gridDataRef.current)
-        .filter(key => key.startsWith(`${currentR},`))
-        .sort((a,b) => parseInt(a.split(',')[1]) - parseInt(b.split(',')[1]))
-        .map(key => gridDataRef.current[key])
-        .join("");
+      .filter((key) => key.startsWith(`${currentR},`))
+      .sort((a, b) => parseInt(a.split(",")[1]) - parseInt(b.split(",")[1]))
+      .map((key) => gridDataRef.current[key])
+      .join("");
 
-    setQueue(prev => {
-        if (prev.find(q => q.id === "student_1")) {
-            speakText("Hand is already raised.");
-            return prev;
-        }
-        const newQueue = [...prev, { id: "student_1", name: "Kelvin Mwangi", timestamp: "Just now", currentLineText }];
-        playBellSound();
-        speakText(`Hand raised. You are number ${newQueue.length} in the queue.`);
-        setComputeStatus(`Hand raised. Queue position: ${newQueue.length}`);
-        return newQueue;
+    setQueue((prev) => {
+      if (prev.find((q) => q.id === "student_1")) {
+        speakText("Hand is already raised.");
+        return prev;
+      }
+      const newQueue = [
+        ...prev,
+        {
+          id: "student_1",
+          name: "Kelvin Mwangi",
+          timestamp: "Just now",
+          currentLineText,
+        },
+      ];
+      playBellSound();
+      speakText(`Hand raised. You are number ${newQueue.length} in the queue.`);
+      setComputeStatus(`Hand raised. Queue position: ${newQueue.length}`);
+      return newQueue;
     });
   }, [speakText]);
 
-  const simulateBroadcastReply = useCallback((student: string) => {
-    const r = activeCellRef.current.r;
-    let lineText = "";
-    Object.keys(gridDataRef.current)
-        .filter(key => key.startsWith(`${r},`))
-        .sort((a,b) => parseInt(a.split(',')[1]) - parseInt(b.split(',')[1]))
-        .forEach(key => lineText += gridDataRef.current[key]);
-    lineText = lineText.trim() || "(Empty line)";
+  const simulateBroadcastReply = useCallback(
+    (student: string) => {
+      const r = activeCellRef.current.r;
+      let lineText = "";
+      Object.keys(gridDataRef.current)
+        .filter((key) => key.startsWith(`${r},`))
+        .sort((a, b) => parseInt(a.split(",")[1]) - parseInt(b.split(",")[1]))
+        .forEach((key) => (lineText += gridDataRef.current[key]));
+      lineText = lineText.trim() || "(Empty line)";
 
-    setIsBroadcastPaletteOpen(false);
-    speakText(`Sent line to ${student}.`);
-    setComputeStatus(`Sent line to ${student}.`);
-    
-    setTimeout(() => {
-      playDoorbellSound();
-      speakText(`Received reply from ${student} in rough work. Click the reply button to view.`);
-      setComputeStatus(`Received reply from ${student} in rough work.`);
-      setBroadcastReply({
-        student,
-        lineText,
-        mockFeedback: student === "Amina"
-          ? "Hey I think you missed a negative sign when moving the 4 over"
-          : "Are you sure that's simplified? Try multiplying both sides by 2."
-      });
-    }, 8000);
-  }, [speakText]);
+      setIsBroadcastPaletteOpen(false);
+      speakText(`Sent line to ${student}.`);
+      setComputeStatus(`Sent line to ${student}.`);
+
+      setTimeout(() => {
+        playDoorbellSound();
+        speakText(
+          `Received reply from ${student} in rough work. Click the reply button to view.`,
+        );
+        setComputeStatus(`Received reply from ${student} in rough work.`);
+        setBroadcastReply({
+          student,
+          lineText,
+          mockFeedback:
+            student === "Amina"
+              ? "Hey I think you missed a negative sign when moving the 4 over"
+              : "Are you sure that's simplified? Try multiplying both sides by 2.",
+        });
+      }, 8000);
+    },
+    [speakText],
+  );
 
   const openBroadcastDialog = useCallback(() => {
     setIsBroadcastPaletteOpen(true);
@@ -938,7 +1116,7 @@ export default function App() {
   }, [speakText]);
 
   const toggleGroupWork = useCallback(() => {
-    setIsGroupWork(prev => {
+    setIsGroupWork((prev) => {
       if (!prev) {
         setHasControl(true);
         setActivePeer("Amina");
@@ -946,7 +1124,8 @@ export default function App() {
         setComputeStatus("Group work started. You have control.");
         return true;
       } else {
-        if (groupWorkTimeoutRef.current) clearTimeout(groupWorkTimeoutRef.current);
+        if (groupWorkTimeoutRef.current)
+          clearTimeout(groupWorkTimeoutRef.current);
         speakText("Group work ended.");
         setComputeStatus("Group work ended.");
         setHasControl(true);
@@ -960,7 +1139,7 @@ export default function App() {
     setHasControl(false);
     speakText(`Control passed to ${activePeer}.`);
     setComputeStatus(`Control passed to ${activePeer}.`);
-    
+
     // Simulate peer working and passing control back
     if (groupWorkTimeoutRef.current) clearTimeout(groupWorkTimeoutRef.current);
     groupWorkTimeoutRef.current = setTimeout(() => {
@@ -987,8 +1166,12 @@ export default function App() {
       const next = !prev;
       if (next) {
         playWhooshLockSound();
-        speakText("Assignment submitted successfully. Entering read-only mode.");
-        setComputeStatus("Assignment submitted successfully. Entering read-only mode.");
+        speakText(
+          "Assignment submitted successfully. Entering read-only mode.",
+        );
+        setComputeStatus(
+          "Assignment submitted successfully. Entering read-only mode.",
+        );
       } else {
         playWhooshUnlockSound();
         speakText("Submission recalled. Editing restored.");
@@ -1058,13 +1241,18 @@ export default function App() {
     setBlocks(getEquationBlocks(gridData));
   }, [gridData]);
 
-  const generateDiffDescription = (prev: Record<string, string>, next: Record<string, string>, activeCellRow: number, isUndo: boolean = false) => {
+  const generateDiffDescription = (
+    prev: Record<string, string>,
+    next: Record<string, string>,
+    activeCellRow: number,
+    isUndo: boolean = false,
+  ) => {
     const prevKeys = Object.keys(prev);
     const nextKeys = Object.keys(next);
-    
+
     const added: string[] = [];
     const removed: string[] = [];
-    
+
     for (const key of nextKeys) {
       if (prev[key] !== next[key]) added.push(key);
     }
@@ -1073,9 +1261,11 @@ export default function App() {
     }
 
     const getSymbolName = (char: string) => {
-       const match = MATH_SYMBOLS.find(s => s.symbol === char) || AUTOCOMPLETE_DICT.find(d => d.symbol === char);
-       return match ? match.name : char;
-    }
+      const match =
+        MATH_SYMBOLS.find((s) => s.symbol === char) ||
+        AUTOCOMPLETE_DICT.find((d) => d.symbol === char);
+      return match ? match.name : char;
+    };
 
     const verbAdd = isUndo ? "Restored" : "Added";
     const verbRemove = isUndo ? "Reverted addition of" : "Deleted";
@@ -1098,7 +1288,7 @@ export default function App() {
     } else if (removed.length > 1) {
       return `${verbRemove} multiple items on line ${parseInt(removed[0].split(",")[0]) + 1}`;
     }
-    
+
     return "updated grid";
   };
 
@@ -1107,21 +1297,25 @@ export default function App() {
       isUndoRedoActionRef.current = false;
       return;
     }
-    
+
     const isScratch = isScratchpadOpenRef.current;
     const workspaceKey = isScratch ? "scratch" : "main";
     const historyStack = historyRef.current[workspaceKey];
     const currentIndex = historyIndexRef.current[workspaceKey];
 
     const lastState = historyStack[currentIndex];
-    
+
     if (JSON.stringify(lastState.gridData) !== JSON.stringify(gridData)) {
-      const desc = generateDiffDescription(lastState.gridData, gridData, activeCellRef.current.r);
+      const desc = generateDiffDescription(
+        lastState.gridData,
+        gridData,
+        activeCellRef.current.r,
+      );
       const newStack = historyStack.slice(0, currentIndex + 1);
       newStack.push({
         gridData,
         activeCell: activeCellRef.current,
-        desc
+        desc,
       });
       historyRef.current[workspaceKey] = newStack;
       historyIndexRef.current[workspaceKey] = newStack.length - 1;
@@ -1141,7 +1335,7 @@ export default function App() {
     const wk = isScratch ? "scratch" : "main";
     const currentIndex = historyIndexRef.current[wk];
     const stack = historyRef.current[wk];
-    
+
     if (currentIndex > 0) {
       const prevState = stack[currentIndex - 1];
       const currState = stack[currentIndex];
@@ -1149,7 +1343,12 @@ export default function App() {
       setGridData(prevState.gridData);
       setActiveCell(prevState.activeCell);
       historyIndexRef.current[wk] = currentIndex - 1;
-      const diffDesc = generateDiffDescription(currState.gridData, prevState.gridData, prevState.activeCell.r, true);
+      const diffDesc = generateDiffDescription(
+        currState.gridData,
+        prevState.gridData,
+        prevState.activeCell.r,
+        true,
+      );
       speakText(`Undo: ${diffDesc}`);
     } else {
       speakText("Nothing to undo");
@@ -1297,8 +1496,7 @@ export default function App() {
     }
   }, [speakText]);
 
-  useEffect(() => {
-  }, [isScratchpadOpen]);
+  useEffect(() => {}, [isScratchpadOpen]);
 
   useEffect(() => {
     const currentBlock = blocks.find(
@@ -1346,76 +1544,113 @@ export default function App() {
   }, [gridData, activeCell]);
 
   const triggerContextLocator = useCallback(() => {
-    const worksheet = isScratchpadOpenRef.current ? "Scratchpad" : "Main Worksheet";
-    
+    const worksheet = isScratchpadOpenRef.current
+      ? "Scratchpad"
+      : "Main Worksheet";
+
     let maxR = 9; // At least 10 lines
     const keys = Object.keys(gridDataRef.current);
     if (keys.length > 0) {
-       maxR = Math.max(maxR, ...keys.map(k => parseInt(k.split(",")[0])));
+      maxR = Math.max(maxR, ...keys.map((k) => parseInt(k.split(",")[0])));
     }
     const totalLines = maxR + 1;
     const currentLine = activeCellRef.current.r + 1;
-    
+
     let cellInfo = "";
     const currentCol = activeCellRef.current.c;
-    const currentCellContent = gridDataRef.current[`${activeCellRef.current.r},${currentCol}`];
+    const currentCellContent =
+      gridDataRef.current[`${activeCellRef.current.r},${currentCol}`];
     if (currentCellContent) {
-       const symbolMatch = MATH_SYMBOLS.find(s => s.symbol === currentCellContent) || 
-                           AUTOCOMPLETE_DICT.find(d => d.symbol === currentCellContent);
-       const symbolName = symbolMatch ? symbolMatch.name : currentCellContent;
-       cellInfo = `The cell contains: ${symbolName}.`;
+      const symbolMatch =
+        MATH_SYMBOLS.find((s) => s.symbol === currentCellContent) ||
+        AUTOCOMPLETE_DICT.find((d) => d.symbol === currentCellContent);
+      const symbolName = symbolMatch ? symbolMatch.name : currentCellContent;
+      cellInfo = `The cell contains: ${symbolName}.`;
     } else {
-       cellInfo = `The cell is empty.`;
+      cellInfo = `The cell is empty.`;
     }
 
-    const lineBlocks = blocksRef.current.filter((b) => b.r === activeCellRef.current.r).sort((a,b) => a.minC - b.minC);
+    const lineBlocks = blocksRef.current
+      .filter((b) => b.r === activeCellRef.current.r)
+      .sort((a, b) => a.minC - b.minC);
     let lineInfo = "";
     if (lineBlocks.length > 0) {
-       const blocksText = lineBlocks.map(b => b.text).join(" ");
-       lineInfo = `The line contains: ${blocksText}.`;
+      const blocksText = lineBlocks.map((b) => b.text).join(" ");
+      lineInfo = `The line contains: ${blocksText}.`;
     } else {
-       lineInfo = `The line is empty.`;
+      lineInfo = `The line is empty.`;
     }
-    
-    speakText(`Worksheet: ${worksheet}. You are on Line ${currentLine} of ${totalLines}. Focused on column ${currentCol + 1}. ${lineInfo} ${cellInfo}`);
+
+    speakText(
+      `Worksheet: ${worksheet}. You are on Line ${currentLine} of ${totalLines}. Focused on column ${currentCol + 1}. ${lineInfo} ${cellInfo}`,
+    );
   }, [speakText]);
 
-  const NAV_ACTIONS = ['toggle_submission', 'reset_next_user', 'save_lesson', 'refresh_equation', 'start_new_lesson', 'hear_explanation', 'next_question', 'toggle_mute', 'focus_navbar', 'open_calculator'];
-
-  const rawFilteredSymbols = paletteSearch ? MATH_SYMBOLS.filter((s) => {
-    const term = paletteSearch.toLowerCase();
-    return (
-      s.name.toLowerCase().includes(term) ||
-      s.symbol.toLowerCase().includes(term)
-    );
-  }) : [
-    { symbol: "√", name: "Square Root function" },
-    { symbol: "π", name: "Pi Constant function" },
-    { symbol: "e", name: "Euler's Number Constant function" },
-    { symbol: "∑", name: "Summation Calculus function" },
-    { symbol: "sin", name: "Sine Trigonometry function" },
-    { symbol: "cos", name: "Cosine Trigonometry function" },
-    { symbol: "tan", name: "Tangent Trigonometry function" },
-    { symbol: "log", name: "Logarithm (Base 10) function" },
-    { symbol: "^", name: "Exponent / Power Operator" },
-    { symbol: "+", name: "Plus / Addition Operator" },
-    { symbol: "-", name: "Minus / Subtraction Operator" },
-    { symbol: "×", name: "Multiply / Times Operator" },
-    { symbol: "÷", name: "Divide Operator" },
-    { symbol: "=", name: "Equals Operator" },
-    { symbol: "½", name: "Insert Fraction", action: "insert_fraction" },
-    { symbol: "🙋‍♂️", name: "Raise Hand (Queue)", action: "raise_hand" },
-    { symbol: "🚀", name: "Submit (Ctrl + S)", action: "toggle_submission" },
-    { symbol: "🔄", name: "Reset for Next User (Ctrl + R)", action: "reset_next_user" },
-    { symbol: "💾", name: "Save Lesson", action: "save_lesson" },
-    { symbol: "🔁", name: "Refresh to Default Equation", action: "refresh_equation" },
-    { symbol: "📄", name: "Start New Lesson", action: "start_new_lesson" },
-    { symbol: "▶️", name: "Hear Explanation", action: "hear_explanation" },
-    { symbol: "⏭️", name: "Next Question", action: "next_question" },
-    { symbol: "🔇", name: "Toggle Audio Engine", action: "toggle_mute" },
-    { symbol: "🎯", name: "Focus Navbar", action: "focus_navbar" },
-    { symbol: "🧮", name: "Voice-Assisted Calculator (Alt + C)", action: "open_calculator" },
+  const NAV_ACTIONS = [
+    "toggle_submission",
+    "reset_next_user",
+    "save_lesson",
+    "refresh_equation",
+    "start_new_lesson",
+    "hear_explanation",
+    "next_question",
+    "toggle_mute",
+    "focus_navbar",
+    "open_calculator",
   ];
+
+  const rawFilteredSymbols = paletteSearch
+    ? MATH_SYMBOLS.filter((s) => {
+        const term = paletteSearch.toLowerCase();
+        return (
+          s.name.toLowerCase().includes(term) ||
+          s.symbol.toLowerCase().includes(term)
+        );
+      })
+    : [
+        { symbol: "√", name: "Square Root function" },
+        { symbol: "π", name: "Pi Constant function" },
+        { symbol: "e", name: "Euler's Number Constant function" },
+        { symbol: "∑", name: "Summation Calculus function" },
+        { symbol: "sin", name: "Sine Trigonometry function" },
+        { symbol: "cos", name: "Cosine Trigonometry function" },
+        { symbol: "tan", name: "Tangent Trigonometry function" },
+        { symbol: "log", name: "Logarithm (Base 10) function" },
+        { symbol: "^", name: "Exponent / Power Operator" },
+        { symbol: "+", name: "Plus / Addition Operator" },
+        { symbol: "-", name: "Minus / Subtraction Operator" },
+        { symbol: "×", name: "Multiply / Times Operator" },
+        { symbol: "÷", name: "Divide Operator" },
+        { symbol: "=", name: "Equals Operator" },
+        { symbol: "½", name: "Insert Fraction", action: "insert_fraction" },
+        { symbol: "🙋‍♂️", name: "Raise Hand (Queue)", action: "raise_hand" },
+        {
+          symbol: "🚀",
+          name: "Submit (Ctrl + S)",
+          action: "toggle_submission",
+        },
+        {
+          symbol: "🔄",
+          name: "Reset for Next User (Ctrl + R)",
+          action: "reset_next_user",
+        },
+        { symbol: "💾", name: "Save Lesson", action: "save_lesson" },
+        {
+          symbol: "🔁",
+          name: "Refresh to Default Equation",
+          action: "refresh_equation",
+        },
+        { symbol: "📄", name: "Start New Lesson", action: "start_new_lesson" },
+        { symbol: "▶️", name: "Hear Explanation", action: "hear_explanation" },
+        { symbol: "⏭️", name: "Next Question", action: "next_question" },
+        { symbol: "🔇", name: "Toggle Audio Engine", action: "toggle_mute" },
+        { symbol: "🎯", name: "Focus Navbar", action: "focus_navbar" },
+        {
+          symbol: "🧮",
+          name: "Voice-Assisted Calculator (Alt + C)",
+          action: "open_calculator",
+        },
+      ];
 
   const filteredSymbols = [...rawFilteredSymbols].sort((a, b) => {
     const isA = NAV_ACTIONS.includes((a as any).action);
@@ -1441,18 +1676,24 @@ export default function App() {
     };
     const handleGlobalKeyUp = (e: KeyboardEvent) => {
       if (e.key === "Control" || e.key === "Meta") {
-        if (!otherKeyPressed.current && ctrlPressedAt.current > 0 && Date.now() - ctrlPressedAt.current < 500) {
-          setIsAudioMuted(prev => !prev);
+        if (
+          !otherKeyPressed.current &&
+          ctrlPressedAt.current > 0 &&
+          Date.now() - ctrlPressedAt.current < 500
+        ) {
+          setIsAudioMuted((prev) => !prev);
           if ("speechSynthesis" in window) window.speechSynthesis.cancel();
         }
         ctrlPressedAt.current = 0;
       }
     };
-    window.addEventListener('keydown', handleGlobalKeyDown, { capture: true });
-    window.addEventListener('keyup', handleGlobalKeyUp, { capture: true });
+    window.addEventListener("keydown", handleGlobalKeyDown, { capture: true });
+    window.addEventListener("keyup", handleGlobalKeyUp, { capture: true });
     return () => {
-      window.removeEventListener('keydown', handleGlobalKeyDown, { capture: true });
-      window.removeEventListener('keyup', handleGlobalKeyUp, { capture: true });
+      window.removeEventListener("keydown", handleGlobalKeyDown, {
+        capture: true,
+      });
+      window.removeEventListener("keyup", handleGlobalKeyUp, { capture: true });
     };
   }, []);
 
@@ -1468,10 +1709,13 @@ export default function App() {
       // Alt + C: Open/Close voice-assisted calculator
       if (e.altKey && (e.key.toLowerCase() === "c" || e.code === "KeyC")) {
         e.preventDefault();
-        setIsCalculatorOpen(prev => {
+        setIsCalculatorOpen((prev) => {
           if (prev) {
             speakText("Calculator closed");
-            setTimeout(() => document.getElementById("grid-input")?.focus(), 50);
+            setTimeout(
+              () => document.getElementById("grid-input")?.focus(),
+              50,
+            );
             return false;
           } else {
             return true;
@@ -1485,15 +1729,26 @@ export default function App() {
         e.preventDefault();
         const toolbar = document.querySelector('[role="toolbar"]');
         if (toolbar) {
-           const focusables = Array.from(
-             toolbar.querySelectorAll<HTMLElement>('button, input')
-           ).filter(el => !el.hasAttribute('disabled') && el.offsetParent !== null && (el.tagName !== "INPUT" || (el as HTMLInputElement).type === "button" || (el as HTMLInputElement).type === "text" || (el as HTMLInputElement).type === "date"));
-           
-           if (focusables.length > 0) {
-             const activeItem = focusables.find(el => el.tabIndex === 0) || focusables[0];
-             activeItem.focus();
-             speakText("Navbar focused. Use left and right arrow keys to navigate.");
-           }
+          const focusables = Array.from(
+            toolbar.querySelectorAll<HTMLElement>("button, input"),
+          ).filter(
+            (el) =>
+              !el.hasAttribute("disabled") &&
+              el.offsetParent !== null &&
+              (el.tagName !== "INPUT" ||
+                (el as HTMLInputElement).type === "button" ||
+                (el as HTMLInputElement).type === "text" ||
+                (el as HTMLInputElement).type === "date"),
+          );
+
+          if (focusables.length > 0) {
+            const activeItem =
+              focusables.find((el) => el.tabIndex === 0) || focusables[0];
+            activeItem.focus();
+            speakText(
+              "Navbar focused. Use left and right arrow keys to navigate.",
+            );
+          }
         }
         return;
       }
@@ -1522,7 +1777,7 @@ export default function App() {
       // Toolkit shortcut (Ctrl + K or Cmd + K)
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        setIsCommandPaletteOpen(prev => !prev);
+        setIsCommandPaletteOpen((prev) => !prev);
         return;
       }
 
@@ -1539,15 +1794,19 @@ export default function App() {
         passControl();
         return;
       }
-      
+
       // Undo
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.key.toLowerCase() === "z" &&
+        !e.shiftKey
+      ) {
         e.preventDefault();
         if (isSubmitted) return;
         executeUndo();
         return;
       }
-      
+
       // Redo
       if (
         ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") ||
@@ -1572,25 +1831,25 @@ export default function App() {
         if (consecutiveHCount.current === 3) {
           e.preventDefault();
           consecutiveHCount.current = 0;
-          
+
           setGridData((prev) => {
             const newData = { ...prev };
             const r = activeCellRef.current.r;
             const c = activeCellRef.current.c;
             let deletedCount = 0;
-            if (newData[`${r},${c-1}`]?.toLowerCase() === "h") {
-                delete newData[`${r},${c-1}`];
-                delete gridDataRef.current[`${r},${c-1}`];
-                deletedCount++;
+            if (newData[`${r},${c - 1}`]?.toLowerCase() === "h") {
+              delete newData[`${r},${c - 1}`];
+              delete gridDataRef.current[`${r},${c - 1}`];
+              deletedCount++;
             }
-            if (newData[`${r},${c-2}`]?.toLowerCase() === "h") {
-                delete newData[`${r},${c-2}`];
-                delete gridDataRef.current[`${r},${c-2}`];
-                deletedCount++;
+            if (newData[`${r},${c - 2}`]?.toLowerCase() === "h") {
+              delete newData[`${r},${c - 2}`];
+              delete gridDataRef.current[`${r},${c - 2}`];
+              deletedCount++;
             }
             if (deletedCount > 0) {
-                setActiveCell({ r, c: Math.max(0, c - deletedCount) });
-                activeCellRef.current = { r, c: Math.max(0, c - deletedCount) };
+              setActiveCell({ r, c: Math.max(0, c - deletedCount) });
+              activeCellRef.current = { r, c: Math.max(0, c - deletedCount) };
             }
             return newData;
           });
@@ -1598,7 +1857,12 @@ export default function App() {
           executeRaiseHand();
           return;
         }
-      } else if (e.key !== "Escape" && e.key !== "Shift" && !e.key?.startsWith("Arrow") && e.key?.toLowerCase() !== "b") {
+      } else if (
+        e.key !== "Escape" &&
+        e.key !== "Shift" &&
+        !e.key?.startsWith("Arrow") &&
+        e.key?.toLowerCase() !== "b"
+      ) {
         consecutiveHCount.current = 0;
       }
 
@@ -1615,25 +1879,25 @@ export default function App() {
         if (consecutiveBCount.current === 3) {
           e.preventDefault();
           consecutiveBCount.current = 0;
-          
+
           setGridData((prev) => {
             const newData = { ...prev };
             const r = activeCellRef.current.r;
             const c = activeCellRef.current.c;
             let deletedCount = 0;
-            if (newData[`${r},${c-1}`]?.toLowerCase() === "b") {
-                delete newData[`${r},${c-1}`];
-                delete gridDataRef.current[`${r},${c-1}`];
-                deletedCount++;
+            if (newData[`${r},${c - 1}`]?.toLowerCase() === "b") {
+              delete newData[`${r},${c - 1}`];
+              delete gridDataRef.current[`${r},${c - 1}`];
+              deletedCount++;
             }
-            if (newData[`${r},${c-2}`]?.toLowerCase() === "b") {
-                delete newData[`${r},${c-2}`];
-                delete gridDataRef.current[`${r},${c-2}`];
-                deletedCount++;
+            if (newData[`${r},${c - 2}`]?.toLowerCase() === "b") {
+              delete newData[`${r},${c - 2}`];
+              delete gridDataRef.current[`${r},${c - 2}`];
+              deletedCount++;
             }
             if (deletedCount > 0) {
-                setActiveCell({ r, c: Math.max(0, c - deletedCount) });
-                activeCellRef.current = { r, c: Math.max(0, c - deletedCount) };
+              setActiveCell({ r, c: Math.max(0, c - deletedCount) });
+              activeCellRef.current = { r, c: Math.max(0, c - deletedCount) };
             }
             return newData;
           });
@@ -1641,7 +1905,12 @@ export default function App() {
           openBroadcastDialog();
           return;
         }
-      } else if (e.key !== "Escape" && e.key !== "Shift" && !e.key?.startsWith("Arrow") && e.key?.toLowerCase() !== "h") {
+      } else if (
+        e.key !== "Escape" &&
+        e.key !== "Shift" &&
+        !e.key?.startsWith("Arrow") &&
+        e.key?.toLowerCase() !== "h"
+      ) {
         consecutiveBCount.current = 0;
       }
 
@@ -1880,7 +2149,13 @@ export default function App() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isCommandPaletteOpen, isHelpMenuOpen, isBroadcastPaletteOpen, toggleScratchpad, isSubmitted]);
+  }, [
+    isCommandPaletteOpen,
+    isHelpMenuOpen,
+    isBroadcastPaletteOpen,
+    toggleScratchpad,
+    isSubmitted,
+  ]);
 
   useEffect(() => {
     if (isCommandPaletteOpen) {
@@ -1929,7 +2204,7 @@ export default function App() {
   );
   const rowsList = Array.from({ length: maxRowIndex + 1 }).map((_, i) => i);
 
-  const validateMathInput = (char: string, cell: {r: number, c: number}) => {
+  const validateMathInput = (char: string, cell: { r: number; c: number }) => {
     if (!char) return { isValid: true, message: "" };
 
     const isDivisionOrMultiplication = ["/", "*", "×", "÷"].includes(char);
@@ -1944,7 +2219,10 @@ export default function App() {
       if (char === "=") name = "equals sign";
       if (char === "+") name = "plus sign";
       if (char === "-") name = "minus sign";
-      return { isValid: false, message: `You started the line with a ${name}. You might have accidentally pressed the wrong key.` };
+      return {
+        isValid: false,
+        message: `You started the line with a ${name}. You might have accidentally pressed the wrong key.`,
+      };
     }
 
     if (isDivisionOrMultiplication) {
@@ -1953,18 +2231,65 @@ export default function App() {
       if (char === "*") name = "asterisk";
       if (char === "×") name = "multiply sign";
       if (char === "÷") name = "divide sign";
-      return { isValid: false, message: `You typed a ${name}, but this problem only requires addition and subtraction.` };
+      return {
+        isValid: false,
+        message: `You typed a ${name}, but this problem only requires addition and subtraction.`,
+      };
     }
 
-    const allowedLetters = ['r', 'R', 'b', 'B', 'h', 'H', 'p', 'P', 'i', 'I', 's', 'S', 'a', 'A', 't', 'T'];
+    const allowedLetters = [
+      "r",
+      "R",
+      "b",
+      "B",
+      "h",
+      "H",
+      "p",
+      "P",
+      "i",
+      "I",
+      "s",
+      "S",
+      "a",
+      "A",
+      "t",
+      "T",
+    ];
     if (/[a-zA-Z]/.test(char) && !allowedLetters.includes(char)) {
-       return { isValid: false, message: `You typed a letter. This problem only requires numbers, addition, subtraction, equals, and parentheses.` };
+      return {
+        isValid: false,
+        message: `You typed a letter. This problem only requires numbers, addition, subtraction, equals, and parentheses.`,
+      };
     }
 
     const whitelist = /^[0-9+\-=().,<>!a-zA-Z]$/;
-    const nemethSymbols = ['√', 'π', '∑', '∫', 'α', 'β', 'θ', '≠', '≤', '≥', '→', '⟨', '⟩', '∞', '½'];
-    if (!whitelist.test(char) && !isDivisionOrMultiplication && !isOperator && !nemethSymbols.includes(char)) {
-       return { isValid: false, message: `You typed an out of scope character. This problem only requires numbers, addition, subtraction, equals, and parentheses.` };
+    const nemethSymbols = [
+      "√",
+      "π",
+      "∑",
+      "∫",
+      "α",
+      "β",
+      "θ",
+      "≠",
+      "≤",
+      "≥",
+      "→",
+      "⟨",
+      "⟩",
+      "∞",
+      "½",
+    ];
+    if (
+      !whitelist.test(char) &&
+      !isDivisionOrMultiplication &&
+      !isOperator &&
+      !nemethSymbols.includes(char)
+    ) {
+      return {
+        isValid: false,
+        message: `You typed an out of scope character. This problem only requires numbers, addition, subtraction, equals, and parentheses.`,
+      };
     }
 
     return { isValid: true, message: "" };
@@ -2125,30 +2450,42 @@ export default function App() {
       if (item) {
         setIsHelpMenuOpen(false);
         if (item.action === "toggle_mute") {
-          setIsAudioMuted(prev => !prev);
-          if (!isAudioMuted && "speechSynthesis" in window) window.speechSynthesis.cancel();
+          setIsAudioMuted((prev) => !prev);
+          if (!isAudioMuted && "speechSynthesis" in window)
+            window.speechSynthesis.cancel();
         } else if (item.action === "focus_navbar") {
           setTimeout(() => {
             const toolbar = document.querySelector('[role="toolbar"]');
             if (toolbar) {
-               const focusables = Array.from(
-                 toolbar.querySelectorAll<HTMLElement>('button, input')
-               ).filter(el => !el.hasAttribute('disabled') && el.offsetParent !== null && (el.tagName !== "INPUT" || (el as HTMLInputElement).type === "button" || (el as HTMLInputElement).type === "text" || (el as HTMLInputElement).type === "date"));
-               
-               if (focusables.length > 0) {
-                 const activeItem = focusables.find(el => el.tabIndex === 0) || focusables[0];
-                 activeItem.focus();
-                 speakText("Navbar focused. Use left and right arrow keys to navigate.");
-               }
+              const focusables = Array.from(
+                toolbar.querySelectorAll<HTMLElement>("button, input"),
+              ).filter(
+                (el) =>
+                  !el.hasAttribute("disabled") &&
+                  el.offsetParent !== null &&
+                  (el.tagName !== "INPUT" ||
+                    (el as HTMLInputElement).type === "button" ||
+                    (el as HTMLInputElement).type === "text" ||
+                    (el as HTMLInputElement).type === "date"),
+              );
+
+              if (focusables.length > 0) {
+                const activeItem =
+                  focusables.find((el) => el.tabIndex === 0) || focusables[0];
+                activeItem.focus();
+                speakText(
+                  "Navbar focused. Use left and right arrow keys to navigate.",
+                );
+              }
             }
           }, 50);
-        } else if (item.action === "command_palette") setIsCommandPaletteOpen(true);
+        } else if (item.action === "command_palette")
+          setIsCommandPaletteOpen(true);
         else if (item.action === "evaluate_math") executeEvaluateMath();
         else if (item.action === "open_calculator") {
-           setIsCommandPaletteOpen(false);
-           setIsCalculatorOpen(true);
-        }
-        else if (item.action === "raise_hand") executeRaiseHand();
+          setIsCommandPaletteOpen(false);
+          setIsCalculatorOpen(true);
+        } else if (item.action === "raise_hand") executeRaiseHand();
         else if (item.action === "toggle_scratchpad") toggleScratchpad();
         else if (item.action === "context_locator") triggerContextLocator();
         else if (item.action === "undo") executeUndo();
@@ -2192,7 +2529,10 @@ export default function App() {
   }, [isBroadcastPaletteOpen]);
 
   useEffect(() => {
-    if (isBroadcastPaletteOpen && broadcastStudentList[broadcastSelectedIndex]) {
+    if (
+      isBroadcastPaletteOpen &&
+      broadcastStudentList[broadcastSelectedIndex]
+    ) {
       speakText(broadcastStudentList[broadcastSelectedIndex]);
     }
   }, [isBroadcastPaletteOpen, broadcastSelectedIndex, speakText]);
@@ -2324,7 +2664,9 @@ export default function App() {
         onMockFeedbackGiven={(submissionId, lineId, feedback) => {
           // This simulates receiving feedback from the teacher
           setTimeout(() => {
-            speakText(`Niaje Kelvin! You have 1 review from Mrs. Mutuku on Algebraic Linear Equations. Press Enter to open.`);
+            speakText(
+              `Niaje Kelvin! You have 1 review from Mrs. Mutuku on Algebraic Linear Equations. Press Enter to open.`,
+            );
             setComputeStatus("New feedback received from teacher.");
             // Store simple mock flag just to demonstrate the loop later
             (window as any).mockFlaggedLine = {
@@ -2350,32 +2692,39 @@ export default function App() {
       <div className="relative z-10 flex flex-col pointer-events-auto shadow-md">
         {/* Status Bar */}
         <div className="flex justify-start items-center px-4 py-1.5 bg-[#163e5b] text-[#b4c9da] text-xs font-semibold h-[24px]">
-            {isGroupWork && (
-              <span className={`px-2 py-0.5 rounded-sm text-[10px] uppercase tracking-wider font-bold ${
-                hasControl ? "bg-green-500/20 text-green-300 border border-green-400/30" : "bg-orange-500/20 text-orange-300 border border-orange-400/30"
-              }`}>
-                Group Work: {hasControl ? "You have control" : `Read-Only (${activePeer} has control)`}
-              </span>
-            )}
-            <button
-              onClick={() => setCurrentView("teacher")}
-              onMouseEnter={() => speakText("Open Teacher View")}
-              onFocus={() => speakText("Open Teacher View")}
-              className="flex items-center gap-1.5 px-2 py-0.5 ml-8 rounded-sm bg-blue-500/10 hover:bg-blue-500/30 border border-blue-400/20 hover:border-blue-400/50 text-[10px] uppercase tracking-wider font-bold transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-1 focus:ring-white/20"
-              title="Open Teacher Feed View"
+          {isGroupWork && (
+            <span
+              className={`px-2 py-0.5 rounded-sm text-[10px] uppercase tracking-wider font-bold ${
+                hasControl
+                  ? "bg-green-500/20 text-green-300 border border-green-400/30"
+                  : "bg-orange-500/20 text-orange-300 border border-orange-400/30"
+              }`}
             >
-              Teacher View
-            </button>
+              Group Work:{" "}
+              {hasControl
+                ? "You have control"
+                : `Read-Only (${activePeer} has control)`}
+            </span>
+          )}
+          <button
+            onClick={() => setCurrentView("teacher")}
+            onMouseEnter={() => speakText("Open Teacher View")}
+            onFocus={() => speakText("Open Teacher View")}
+            className="flex items-center gap-1.5 px-2 py-0.5 ml-8 rounded-sm bg-blue-500/10 hover:bg-blue-500/30 border border-blue-400/20 hover:border-blue-400/50 text-[10px] uppercase tracking-wider font-bold transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-1 focus:ring-white/20"
+            title="Open Teacher Feed View"
+          >
+            Teacher View
+          </button>
         </div>
 
-        <div 
+        <div
           className="flex justify-between items-center h-14 bg-[#163e5b] text-white px-2 border-b-2 border-transparent relative z-20"
           role="toolbar"
           aria-label="Main Toolbar"
           onKeyDown={handleToolbarKeyDown}
         >
           <div className="flex items-center flex-1 min-w-0 pr-2">
-            <button 
+            <button
               onMouseEnter={() => speakText("Go back")}
               onFocus={() => speakText("Go back")}
               className="hover:bg-white/10 rounded p-1 ml-1 cursor-pointer transition-colors focus:outline-none focus:ring-[8px] focus:ring-[#facc15] shrink-0"
@@ -2481,21 +2830,28 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex flex-col justify-center items-center pointer-events-none z-10 w-auto gap-1 relative shrink-0 mx-2">
-             <button
-               onClick={() => {
-                  setIsAudioMuted(!isAudioMuted);
-                  if (!isAudioMuted && "speechSynthesis" in window) {
-                    window.speechSynthesis.cancel();
-                  }
-               }}
-               aria-pressed={isAudioMuted}
-               tabIndex={-1}
-               className={`pointer-events-auto flex items-center justify-center gap-1.5 h-8 px-3 rounded-md font-bold text-sm tracking-wide outline-none transition-all focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] bg-[#FFFF00] text-black hover:bg-[#e6e600]`}
-             >
-                {!isAudioMuted ? <Volume2 size={16} className="shrink-0" /> : <VolumeX size={16} className="shrink-0" />}
-                <span className="whitespace-nowrap shrink-0">{!isAudioMuted ? "ON" : "MUTED"}</span>
-             </button>
+          {/* Centered Controls Overlay */}
+          <div className="absolute left-1/2 top-0 h-full -translate-x-1/2 flex flex-col justify-center items-center pointer-events-none z-10">
+            <button
+              onClick={() => {
+                setIsAudioMuted(!isAudioMuted);
+                if (!isAudioMuted && "speechSynthesis" in window) {
+                  window.speechSynthesis.cancel();
+                }
+              }}
+              aria-pressed={isAudioMuted}
+              tabIndex={-1}
+              className={`pointer-events-auto flex items-center justify-center gap-1.5 h-8 px-3 rounded-md font-bold text-sm tracking-wide outline-none transition-all focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] bg-[#FFFF00] text-black hover:bg-[#e6e600] shadow-sm`}
+            >
+              {!isAudioMuted ? (
+                <Volume2 size={16} className="shrink-0" />
+              ) : (
+                <VolumeX size={16} className="shrink-0" />
+              )}
+              <span className="whitespace-nowrap shrink-0 hidden sm:inline-block">
+                {!isAudioMuted ? "ON" : "MUTED"}
+              </span>
+            </button>
             {broadcastReply && !isScratchpadOpen && (
               <button
                 onClick={() => toggleScratchpad()}
@@ -2540,15 +2896,17 @@ export default function App() {
                 <FilePlus size={18} />
                 <span className="hidden xl:inline">New</span>
               </button>
-              
+
               <div className="w-[1px] h-6 bg-[#316995]/30 mx-0.5 sm:mx-1 shrink-0 hidden sm:block"></div>
-              
+
               {isSubmitted ? (
                 <>
                   <button
                     onClick={hearExplanation}
                     tabIndex={-1}
-                    onMouseEnter={() => speakText("Hear explanation of your work")}
+                    onMouseEnter={() =>
+                      speakText("Hear explanation of your work")
+                    }
                     onFocus={() => speakText("Hear explanation of your work")}
                     className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 border border-transparent hover:border-blue-300 text-[13px] lg:text-sm font-medium transition-all text-white shadow-sm outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
                     title="Hear explanation of your work"
@@ -2573,8 +2931,16 @@ export default function App() {
                   <button
                     onClick={resetForNextUser}
                     tabIndex={-1}
-                    onMouseEnter={() => speakText("Press Control+R or command+R to clear all inputs for the next student.")}
-                    onFocus={() => speakText("Press Control+R or command+R to clear all inputs for the next student.")}
+                    onMouseEnter={() =>
+                      speakText(
+                        "Press Control+R or command+R to clear all inputs for the next student.",
+                      )
+                    }
+                    onFocus={() =>
+                      speakText(
+                        "Press Control+R or command+R to clear all inputs for the next student.",
+                      )
+                    }
                     className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-red-500/20 border border-transparent text-[13px] lg:text-sm font-medium transition-all text-red-400 hover:text-red-300 outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
                     title="Reset for next user"
                   >
@@ -2595,8 +2961,16 @@ export default function App() {
                   <button
                     onClick={toggleSubmission}
                     tabIndex={-1}
-                    onMouseEnter={() => speakText("Submit assignment. Shortcut is Command or Control S.")}
-                    onFocus={() => speakText("Submit assignment. Shortcut is Command or Control S.")}
+                    onMouseEnter={() =>
+                      speakText(
+                        "Submit assignment. Shortcut is Command or Control S.",
+                      )
+                    }
+                    onFocus={() =>
+                      speakText(
+                        "Submit assignment. Shortcut is Command or Control S.",
+                      )
+                    }
                     className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-cyan-600 hover:bg-cyan-500 border border-transparent hover:border-cyan-300 text-[13px] lg:text-sm font-medium transition-all text-white shadow-sm outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
                     title="Submit assignment"
                   >
@@ -2611,8 +2985,16 @@ export default function App() {
               <button
                 onClick={() => setIsCommandPaletteOpen(true)}
                 tabIndex={-1}
-                onMouseEnter={() => speakText("Open Math Tool Palette. Shortcut is Command or Control K.")}
-                onFocus={() => speakText("Open Math Tool Palette. Shortcut is Command or Control K.")}
+                onMouseEnter={() =>
+                  speakText(
+                    "Open Math Tool Palette. Shortcut is Command or Control K.",
+                  )
+                }
+                onFocus={() =>
+                  speakText(
+                    "Open Math Tool Palette. Shortcut is Command or Control K.",
+                  )
+                }
                 className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-[13px] lg:text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
                 title="Open Math Tool Palette"
               >
@@ -2632,11 +3014,13 @@ export default function App() {
         <div
           className={`transition-all duration-500 ease-out flex-1 relative h-full flex flex-col overflow-y-auto ${isScratchpadOpen ? "w-1/2 -translate-x-4 opacity-30 pointer-events-none" : "w-full translate-x-0 opacity-100"}`}
         >
-          <nav 
+          <nav
             aria-label="Lesson Notes"
             tabIndex={0}
             onFocus={() => {
-              speakText("Module 4: Operations. The Rules of Integers. When adding and subtracting integers, remember these key concepts: 1. Adding a negative is like subtracting a positive. a + (-b) = a - b. 2. Subtracting a negative is like adding a positive. a - (-b) = a + b.");
+              speakText(
+                "Module 4: Operations. The Rules of Integers. When adding and subtracting integers, remember these key concepts: 1. Adding a negative is like subtracting a positive. a + (-b) = a - b. 2. Subtracting a negative is like adding a positive. a - (-b) = a + b.",
+              );
             }}
             onKeyDown={(e) => {
               if (e.key.length === 1 || e.key === "Enter") {
@@ -2648,93 +3032,116 @@ export default function App() {
           >
             <div className="max-w-3xl mx-auto space-y-6 text-[#b4c9da]">
               <div className="flex items-center gap-3 text-blue-400">
-                <h2 className="text-sm font-bold uppercase tracking-widest text-[#ffffff]">Module 4: Operations</h2>
+                <h2 className="text-sm font-bold uppercase tracking-widest text-[#ffffff]">
+                  Module 4: Operations
+                </h2>
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">The Rules of Integers</h1>
+                <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">
+                  The Rules of Integers
+                </h1>
                 <p className="text-[#86a8c3] text-lg leading-relaxed">
-                  When adding and subtracting integers, remember these key concepts:
+                  When adding and subtracting integers, remember these key
+                  concepts:
                 </p>
               </div>
               <div className="bg-[#112a3d] rounded-lg p-6 border border-[#316995]/20 font-mono text-center shadow-inner mt-4">
-                <p className="mb-4">1. Adding a negative is like subtracting a positive:<br/> <span className="text-white">a + (-b) = a - b</span></p>
-                <p>2. Subtracting a negative is like adding a positive:<br/> <span className="text-white">a - (-b) = a + b</span></p>
+                <p className="mb-4">
+                  1. Adding a negative is like subtracting a positive:
+                  <br /> <span className="text-white">a + (-b) = a - b</span>
+                </p>
+                <p>
+                  2. Subtracting a negative is like adding a positive:
+                  <br /> <span className="text-white">a - (-b) = a + b</span>
+                </p>
               </div>
             </div>
-            <div className="absolute top-4 right-4 bg-blue-500/10 text-blue-300 text-[10px] font-bold px-2 py-1 uppercase tracking-wider rounded border border-blue-400/20">Read-Only</div>
+            <div className="absolute top-4 right-4 bg-blue-500/10 text-blue-300 text-[10px] font-bold px-2 py-1 uppercase tracking-wider rounded border border-blue-400/20">
+              Read-Only
+            </div>
           </nav>
-          
-          <main aria-label="Assignment Canvas" className="flex-1 relative pb-20">
+
+          <main
+            aria-label="Assignment Canvas"
+            className="flex-1 relative pb-20"
+          >
             <ol className="list-decimal pl-[72px] pr-8 py-8 space-y-4 font-sans text-lg font-bold text-[#b4c9da] marker:text-[#86a8c3]">
-            {Array.from({
-              length:
-                Math.max(
-                  isScratchpadOpen ? mainWorkspace.activeCell.r : activeCell.r,
-                  Object.keys(
-                    isScratchpadOpen ? mainWorkspace.gridData : gridData,
-                  )
-                    .map((k) => parseInt(k.split(",")[0], 10))
-                    .reduce((a, b) => Math.max(a, b), 0),
-                ) + 1,
-            }).map((_, r) => {
-              const currentGridData = isScratchpadOpen
-                ? mainWorkspace.gridData
-                : gridData;
-              const currentActiveCell = isScratchpadOpen
-                ? mainWorkspace.activeCell
-                : activeCell;
-              const currentBlocks = isScratchpadOpen
-                ? mainWorkspace.blocks
-                : blocks;
-              const currentComputedAnswers = isScratchpadOpen
-                ? mainWorkspace.computedAnswers
-                : computedAnswers;
-              const isActiveView = !isScratchpadOpen;
+              {Array.from({
+                length:
+                  Math.max(
+                    isScratchpadOpen
+                      ? mainWorkspace.activeCell.r
+                      : activeCell.r,
+                    Object.keys(
+                      isScratchpadOpen ? mainWorkspace.gridData : gridData,
+                    )
+                      .map((k) => parseInt(k.split(",")[0], 10))
+                      .reduce((a, b) => Math.max(a, b), 0),
+                  ) + 1,
+              }).map((_, r) => {
+                const currentGridData = isScratchpadOpen
+                  ? mainWorkspace.gridData
+                  : gridData;
+                const currentActiveCell = isScratchpadOpen
+                  ? mainWorkspace.activeCell
+                  : activeCell;
+                const currentBlocks = isScratchpadOpen
+                  ? mainWorkspace.blocks
+                  : blocks;
+                const currentComputedAnswers = isScratchpadOpen
+                  ? mainWorkspace.computedAnswers
+                  : computedAnswers;
+                const isActiveView = !isScratchpadOpen;
 
-              return (
-                <li
-                  key={`main-${r}`}
-                  className="relative min-h-[46px] w-[max-content] min-w-full cursor-text"
-                  onClick={(e) => isActiveView && handleRowClick(e, r)}
-                >
-                  <div
-                    className="absolute inset-x-0 inset-y-0 z-0 pointer-events-none transition-colors duration-300 rounded"
-                    style={
-                      bgType === "grid"
-                        ? gridStyle
-                        : { backgroundColor: "transparent" }
-                    }
-                  />
-                  <div className="relative z-10 h-[46px]">
-                    {currentBlocks
-                      .filter((b) => b.r === r)
-                      .map((block) => (
-                        <div
-                          key={block.id}
-                          className="absolute pointer-events-none"
-                          style={{ top: 0, left: block.minC * 46, height: 46 }}
-                        >
-                          {block.cells.map((cell) => (
-                            <div
-                              key={`${cell.c}`}
-                              className="absolute flex items-center justify-center text-[24px] font-medium text-cyan-400 font-sans"
-                              style={{
-                                left: (cell.c - block.minC) * 46,
-                                width: 46,
-                                height: 46,
-                              }}
-                            >
-                              {cell.val}
-                            </div>
-                          ))}
-                        </div>
-                      ))}
+                return (
+                  <li
+                    key={`main-${r}`}
+                    className="relative min-h-[46px] w-[max-content] min-w-full cursor-text"
+                    onClick={(e) => isActiveView && handleRowClick(e, r)}
+                  >
+                    <div
+                      className="absolute inset-x-0 inset-y-0 z-0 pointer-events-none transition-colors duration-300 rounded"
+                      style={
+                        bgType === "grid"
+                          ? gridStyle
+                          : { backgroundColor: "transparent" }
+                      }
+                    />
+                    <div className="relative z-10 h-[46px]">
+                      {currentBlocks
+                        .filter((b) => b.r === r)
+                        .map((block) => (
+                          <div
+                            key={block.id}
+                            className="absolute pointer-events-none"
+                            style={{
+                              top: 0,
+                              left: block.minC * 46,
+                              height: 46,
+                            }}
+                          >
+                            {block.cells.map((cell) => (
+                              <div
+                                key={`${cell.c}`}
+                                className="absolute flex items-center justify-center text-[24px] font-medium text-cyan-400 font-sans"
+                                style={{
+                                  left: (cell.c - block.minC) * 46,
+                                  width: 46,
+                                  height: 46,
+                                }}
+                              >
+                                {cell.val}
+                              </div>
+                            ))}
+                          </div>
+                        ))}
 
-                    {isActiveView && currentActiveCell.r === r && (
-                      <input
+                      {isActiveView && currentActiveCell.r === r && (
+                        <input
                           id="grid-input"
                           className={`absolute flex items-center justify-center text-[24px] font-medium text-center outline-none m-0 p-0 font-sans cursor-text transition-colors duration-200 z-20 ${
-                            inputError?.r === currentActiveCell.r && inputError?.c === currentActiveCell.c
+                            inputError?.r === currentActiveCell.r &&
+                            inputError?.c === currentActiveCell.c
                               ? "bg-red-900/30 border-2 border-red-500 text-red-500 animate-[pulse_0.15s_ease-in-out_2]"
                               : `text-cyan-400 ${
                                   bgType === "grid"
@@ -2743,84 +3150,87 @@ export default function App() {
                                 }`
                           }`}
                           style={{
-                          top: 0,
-                          left: currentActiveCell.c * 46,
-                          width: 46,
-                          height: 46,
-                        }}
-                        value={
-                          currentGridData[
-                            `${currentActiveCell.r},${currentActiveCell.c}`
-                          ] || ""
-                        }
-                        onChange={handleCellChange}
-                        onKeyDown={handleInputKeyDown}
-                        readOnly={isSubmitted || (isGroupWork && !hasControl)}
-                        tabIndex={(!isGroupWork || hasControl) ? 0 : -1}
-                        autoComplete="off"
-                        autoFocus
-                      />
-                    )}
-
-                    {isActiveView &&
-                      suggestion &&
-                      currentActiveCell.r === r && (
-                        <div
-                          className="absolute bg-[#163e5b]/95 backdrop-blur-md border border-[#316995]/50 text-white px-3 py-2 rounded-lg shadow-xl text-[12px] font-sans font-medium whitespace-nowrap z-50 pointer-events-none flex flex-col origin-top-left animate-in fade-in zoom-in-95 duration-100"
-                          style={{ top: 46 + 4, left: suggestion.startC * 46 }}
-                        >
-                          <div className="flex items-baseline gap-2 mb-1.5">
-                            <span className="text-white text-[18px] font-medium leading-none">
-                              {suggestion.symbol}
-                            </span>
-                            <span className="text-[#b4c9da] text-xs font-light tracking-wide">
-                              {suggestion.name}
-                            </span>
-                          </div>
-                          <div className="text-[9px] text-[#86a8c3] bg-black/40 px-2 py-1 rounded-[4px] uppercase tracking-widest leading-none inline-block text-center font-bold">
-                            Tap Tab to accept
-                          </div>
-                        </div>
+                            top: 0,
+                            left: currentActiveCell.c * 46,
+                            width: 46,
+                            height: 46,
+                          }}
+                          value={
+                            currentGridData[
+                              `${currentActiveCell.r},${currentActiveCell.c}`
+                            ] || ""
+                          }
+                          onChange={handleCellChange}
+                          onKeyDown={handleInputKeyDown}
+                          readOnly={isSubmitted || (isGroupWork && !hasControl)}
+                          tabIndex={!isGroupWork || hasControl ? 0 : -1}
+                          autoComplete="off"
+                          autoFocus
+                        />
                       )}
 
-                    {currentComputedAnswers
-                      .filter((a) => a.r === r)
-                      .map((answer) => (
-                        <div
-                          key={answer.id}
-                          className={`absolute rounded-[8px] shadow-sm z-0 pointer-events-none flex items-center overflow-hidden origin-left animate-in fade-in zoom-in-95 duration-200 ${
-                            answer.type === "success"
-                              ? "bg-[#e4ecbe] border-[2.5px] border-[#163e5b] text-[#163e5b]"
-                              : "bg-red-100 border-[2.5px] border-red-500 text-red-900"
-                          }`}
-                          style={{
-                            top: 0,
-                            left: answer.c * 46,
-                            height: 46,
-                            marginLeft: answer.type === "success" ? 0 : 8,
-                          }}
-                        >
-                          {answer.type === "success" ? (
-                            answer.text.split("").map((char, i) => (
-                              <div
-                                key={i}
-                                className="flex items-center justify-center text-[24px] font-medium font-sans w-[46px] h-full shrink-0"
-                              >
-                                {char}
-                              </div>
-                            ))
-                          ) : (
-                            <div className="flex items-center justify-center text-[18px] font-medium font-sans h-full px-4 shrink-0 whitespace-nowrap">
-                              {answer.text}
+                      {isActiveView &&
+                        suggestion &&
+                        currentActiveCell.r === r && (
+                          <div
+                            className="absolute bg-[#163e5b]/95 backdrop-blur-md border border-[#316995]/50 text-white px-3 py-2 rounded-lg shadow-xl text-[12px] font-sans font-medium whitespace-nowrap z-50 pointer-events-none flex flex-col origin-top-left animate-in fade-in zoom-in-95 duration-100"
+                            style={{
+                              top: 46 + 4,
+                              left: suggestion.startC * 46,
+                            }}
+                          >
+                            <div className="flex items-baseline gap-2 mb-1.5">
+                              <span className="text-white text-[18px] font-medium leading-none">
+                                {suggestion.symbol}
+                              </span>
+                              <span className="text-[#b4c9da] text-xs font-light tracking-wide">
+                                {suggestion.name}
+                              </span>
                             </div>
-                          )}
-                        </div>
-                      ))}
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
+                            <div className="text-[9px] text-[#86a8c3] bg-black/40 px-2 py-1 rounded-[4px] uppercase tracking-widest leading-none inline-block text-center font-bold">
+                              Tap Tab to accept
+                            </div>
+                          </div>
+                        )}
+
+                      {currentComputedAnswers
+                        .filter((a) => a.r === r)
+                        .map((answer) => (
+                          <div
+                            key={answer.id}
+                            className={`absolute rounded-[8px] shadow-sm z-0 pointer-events-none flex items-center overflow-hidden origin-left animate-in fade-in zoom-in-95 duration-200 ${
+                              answer.type === "success"
+                                ? "bg-[#e4ecbe] border-[2.5px] border-[#163e5b] text-[#163e5b]"
+                                : "bg-red-100 border-[2.5px] border-red-500 text-red-900"
+                            }`}
+                            style={{
+                              top: 0,
+                              left: answer.c * 46,
+                              height: 46,
+                              marginLeft: answer.type === "success" ? 0 : 8,
+                            }}
+                          >
+                            {answer.type === "success" ? (
+                              answer.text.split("").map((char, i) => (
+                                <div
+                                  key={i}
+                                  className="flex items-center justify-center text-[24px] font-medium font-sans w-[46px] h-full shrink-0"
+                                >
+                                  {char}
+                                </div>
+                              ))
+                            ) : (
+                              <div className="flex items-center justify-center text-[18px] font-medium font-sans h-full px-4 shrink-0 whitespace-nowrap">
+                                {answer.text}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
           </main>
         </div>
 
@@ -2838,13 +3248,15 @@ export default function App() {
               </p>
             </div>
             <div className="flex gap-4 items-center">
-              <button 
+              <button
                 onClick={toggleScratchpad}
                 className="hidden sm:inline-flex items-center gap-1 bg-white/10 hover:bg-white/20 transition-colors border border-white/10 rounded px-2 py-1 text-[10px] font-mono text-white/70"
                 title="Close Scratchpad (Esc)"
               >
                 Close
-                <span className="text-[9px] opacity-70 border border-white/20 rounded px-1 ml-1 font-sans">Esc</span>
+                <span className="text-[9px] opacity-70 border border-white/20 rounded px-1 ml-1 font-sans">
+                  Esc
+                </span>
               </button>
             </div>
           </div>
@@ -2858,8 +3270,10 @@ export default function App() {
                     <MessageSquare size={12} className="text-cyan-400" />
                     Peer Reply
                   </div>
-                  <div className="text-sm font-semibold text-white">from {broadcastReply.student}</div>
-                  <button 
+                  <div className="text-sm font-semibold text-white">
+                    from {broadcastReply.student}
+                  </div>
+                  <button
                     onClick={() => setBroadcastReply(null)}
                     className="ml-auto text-cyan-400/60 hover:text-cyan-300 transition-colors bg-cyan-900/40 p-1.5 rounded-full hover:bg-cyan-800/60"
                   >
@@ -2873,7 +3287,9 @@ export default function App() {
                   <div className="mt-0.5 text-cyan-400 shrink-0 bg-cyan-900/50 p-1.5 rounded-full">
                     <MessageSquare size={14} className="fill-cyan-400/20" />
                   </div>
-                  <div className="text-sm leading-relaxed text-cyan-100 font-medium">{broadcastReply.mockFeedback}</div>
+                  <div className="text-sm leading-relaxed text-cyan-100 font-medium">
+                    {broadcastReply.mockFeedback}
+                  </div>
                 </div>
               </div>
             )}
@@ -2936,7 +3352,8 @@ export default function App() {
                         <input
                           id="grid-input"
                           className={`absolute flex items-center justify-center text-[24px] font-medium text-center outline-none m-0 p-0 font-sans cursor-text transition-colors duration-200 z-20 ${
-                            inputError?.r === currentActiveCell.r && inputError?.c === currentActiveCell.c
+                            inputError?.r === currentActiveCell.r &&
+                            inputError?.c === currentActiveCell.c
                               ? "bg-red-900/30 border-2 border-red-500 text-red-500 animate-[pulse_0.15s_ease-in-out_2]"
                               : `text-cyan-400 ${
                                   bgType === "grid"
@@ -2958,7 +3375,7 @@ export default function App() {
                           onChange={handleCellChange}
                           onKeyDown={handleInputKeyDown}
                           readOnly={isSubmitted || (isGroupWork && !hasControl)}
-                          tabIndex={(!isGroupWork || hasControl) ? 0 : -1}
+                          tabIndex={!isGroupWork || hasControl ? 0 : -1}
                           autoComplete="off"
                           autoFocus
                         />
@@ -3079,119 +3496,173 @@ export default function App() {
               >
                 {filteredSymbols.map((item, index) => {
                   const isSelected = index === paletteSelectedIndex;
-                  const isNavAction = NAV_ACTIONS.includes((item as any).action);
-                  const prevIsNavAction = index > 0 && NAV_ACTIONS.includes((filteredSymbols[index - 1] as any).action);
+                  const isNavAction = NAV_ACTIONS.includes(
+                    (item as any).action,
+                  );
+                  const prevIsNavAction =
+                    index > 0 &&
+                    NAV_ACTIONS.includes(
+                      (filteredSymbols[index - 1] as any).action,
+                    );
 
                   return (
                     <React.Fragment key={item.symbol + index}>
                       {isNavAction && !prevIsNavAction && (
                         <div className="flex items-center gap-3 px-4 md:px-6 py-2 mt-2 mb-1 select-none w-full">
                           <div className="h-[1px] flex-1 bg-[#316995]/30"></div>
-                          <span className="text-[11px] font-bold tracking-wider uppercase text-[#86a8c3]">Navigation Actions</span>
+                          <span className="text-[11px] font-bold tracking-wider uppercase text-[#86a8c3]">
+                            Navigation Actions
+                          </span>
                           <div className="h-[1px] flex-1 bg-[#316995]/30"></div>
                         </div>
                       )}
                       <button
                         onClick={() => {
-                        if ((item as any).action === "raise_hand") {
-                          setIsCommandPaletteOpen(false);
-                          executeRaiseHand();
-                        } else if ((item as any).action === "broadcast_line") {
-                          setIsCommandPaletteOpen(false);
-                          openBroadcastDialog();
-                        } else if ((item as any).action === "toggle_scratchpad") {
-                          setIsCommandPaletteOpen(false);
-                          toggleScratchpad();
-                        } else if ((item as any).action === "context_locator") {
-                          setIsCommandPaletteOpen(false);
-                          triggerContextLocator();
-                        } else if ((item as any).action === "start_group_work") {
-                          setIsCommandPaletteOpen(false);
-                          toggleGroupWork();
-                        } else if ((item as any).action === "insert_fraction") {
-                          setIsCommandPaletteOpen(false);
-                          setFractionNum("");
-                          setFractionDen("");
-                          setIsFractionDialogOpen(true);
-                          setTimeout(() => fractionNumRef.current?.focus(), 50);
-                        } else if ((item as any).action === "toggle_submission") {
-                          setIsCommandPaletteOpen(false);
-                          toggleSubmission();
-                        } else if ((item as any).action === "reset_next_user") {
-                          setIsCommandPaletteOpen(false);
-                          resetForNextUser();
-                        } else if ((item as any).action === "save_lesson") {
-                          setIsCommandPaletteOpen(false);
-                          saveLesson();
-                        } else if ((item as any).action === "refresh_equation") {
-                          setIsCommandPaletteOpen(false);
-                          refreshEquation();
-                        } else if ((item as any).action === "start_new_lesson") {
-                          setIsCommandPaletteOpen(false);
-                          startNewLesson();
-                        } else if ((item as any).action === "hear_explanation") {
-                          setIsCommandPaletteOpen(false);
-                          hearExplanation();
-                        } else if ((item as any).action === "next_question") {
-                          setIsCommandPaletteOpen(false);
-                          nextQuestion();
-                        } else if ((item as any).action === "toggle_mute") {
-                          setIsCommandPaletteOpen(false);
-                          setIsAudioMuted(prev => !prev);
-                          if (!isAudioMutedRef.current && "speechSynthesis" in window) {
-                             window.speechSynthesis.cancel();
-                          }
-                        } else if ((item as any).action === "open_calculator") {
-                          setIsCommandPaletteOpen(false);
-                          setIsCalculatorOpen(true);
-                        } else if ((item as any).action === "focus_navbar") {
-                          setIsCommandPaletteOpen(false);
-                          setTimeout(() => {
-                            const toolbar = document.querySelector('[role="toolbar"]');
-                            if (toolbar) {
-                               const focusables = Array.from(
-                                 toolbar.querySelectorAll<HTMLElement>('button, input')
-                               ).filter(el => !el.hasAttribute('disabled') && el.offsetParent !== null && (el.tagName !== "INPUT" || (el as HTMLInputElement).type === "button" || (el as HTMLInputElement).type === "text" || (el as HTMLInputElement).type === "date"));
-                               
-                               if (focusables.length > 0) {
-                                 const activeItem = focusables.find(el => el.tabIndex === 0) || focusables[0];
-                                 activeItem.focus();
-                                 speakText("Navbar focused. Use left and right arrow keys to navigate.");
-                               }
+                          if ((item as any).action === "raise_hand") {
+                            setIsCommandPaletteOpen(false);
+                            executeRaiseHand();
+                          } else if (
+                            (item as any).action === "broadcast_line"
+                          ) {
+                            setIsCommandPaletteOpen(false);
+                            openBroadcastDialog();
+                          } else if (
+                            (item as any).action === "toggle_scratchpad"
+                          ) {
+                            setIsCommandPaletteOpen(false);
+                            toggleScratchpad();
+                          } else if (
+                            (item as any).action === "context_locator"
+                          ) {
+                            setIsCommandPaletteOpen(false);
+                            triggerContextLocator();
+                          } else if (
+                            (item as any).action === "start_group_work"
+                          ) {
+                            setIsCommandPaletteOpen(false);
+                            toggleGroupWork();
+                          } else if (
+                            (item as any).action === "insert_fraction"
+                          ) {
+                            setIsCommandPaletteOpen(false);
+                            setFractionNum("");
+                            setFractionDen("");
+                            setIsFractionDialogOpen(true);
+                            setTimeout(
+                              () => fractionNumRef.current?.focus(),
+                              50,
+                            );
+                          } else if (
+                            (item as any).action === "toggle_submission"
+                          ) {
+                            setIsCommandPaletteOpen(false);
+                            toggleSubmission();
+                          } else if (
+                            (item as any).action === "reset_next_user"
+                          ) {
+                            setIsCommandPaletteOpen(false);
+                            resetForNextUser();
+                          } else if ((item as any).action === "save_lesson") {
+                            setIsCommandPaletteOpen(false);
+                            saveLesson();
+                          } else if (
+                            (item as any).action === "refresh_equation"
+                          ) {
+                            setIsCommandPaletteOpen(false);
+                            refreshEquation();
+                          } else if (
+                            (item as any).action === "start_new_lesson"
+                          ) {
+                            setIsCommandPaletteOpen(false);
+                            startNewLesson();
+                          } else if (
+                            (item as any).action === "hear_explanation"
+                          ) {
+                            setIsCommandPaletteOpen(false);
+                            hearExplanation();
+                          } else if ((item as any).action === "next_question") {
+                            setIsCommandPaletteOpen(false);
+                            nextQuestion();
+                          } else if ((item as any).action === "toggle_mute") {
+                            setIsCommandPaletteOpen(false);
+                            setIsAudioMuted((prev) => !prev);
+                            if (
+                              !isAudioMutedRef.current &&
+                              "speechSynthesis" in window
+                            ) {
+                              window.speechSynthesis.cancel();
                             }
-                          }, 50);
-                        } else {
-                          insertSymbol(item.symbol);
-                        }
-                      }}
-                      onMouseEnter={() => setPaletteSelectedIndex(index)}
-                      className={`flex items-center justify-between px-4 md:px-6 py-3 text-left transition-all outline-none border-[3px] my-1 rounded-lg mx-2 w-[calc(100%-16px)]
+                          } else if (
+                            (item as any).action === "open_calculator"
+                          ) {
+                            setIsCommandPaletteOpen(false);
+                            setIsCalculatorOpen(true);
+                          } else if ((item as any).action === "focus_navbar") {
+                            setIsCommandPaletteOpen(false);
+                            setTimeout(() => {
+                              const toolbar =
+                                document.querySelector('[role="toolbar"]');
+                              if (toolbar) {
+                                const focusables = Array.from(
+                                  toolbar.querySelectorAll<HTMLElement>(
+                                    "button, input",
+                                  ),
+                                ).filter(
+                                  (el) =>
+                                    !el.hasAttribute("disabled") &&
+                                    el.offsetParent !== null &&
+                                    (el.tagName !== "INPUT" ||
+                                      (el as HTMLInputElement).type ===
+                                        "button" ||
+                                      (el as HTMLInputElement).type ===
+                                        "text" ||
+                                      (el as HTMLInputElement).type === "date"),
+                                );
+
+                                if (focusables.length > 0) {
+                                  const activeItem =
+                                    focusables.find(
+                                      (el) => el.tabIndex === 0,
+                                    ) || focusables[0];
+                                  activeItem.focus();
+                                  speakText(
+                                    "Navbar focused. Use left and right arrow keys to navigate.",
+                                  );
+                                }
+                              }
+                            }, 50);
+                          } else {
+                            insertSymbol(item.symbol);
+                          }
+                        }}
+                        onMouseEnter={() => setPaletteSelectedIndex(index)}
+                        className={`flex items-center justify-between px-4 md:px-6 py-3 text-left transition-all outline-none border-[3px] my-1 rounded-lg mx-2 w-[calc(100%-16px)]
                                ${isSelected ? "bg-[#112a3d] border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.3)]" : "border-transparent hover:bg-[#1a4b6e]/30"}
                             `}
-                    >
-                      <div className="flex items-center gap-4 md:gap-5">
-                        <span
-                          className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-lg text-2xl font-medium shrink-0 transition-colors
+                      >
+                        <div className="flex items-center gap-4 md:gap-5">
+                          <span
+                            className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-lg text-2xl font-medium shrink-0 transition-colors
                                   ${isSelected ? "bg-cyan-900/50 text-cyan-400 border border-cyan-400/50" : "bg-[#112a3d] text-white border border-[#316995] shadow-sm"}
                                `}
-                        >
-                          {item.symbol}
-                        </span>
-                        <span
-                          className={`text-[15px] md:text-[16px] tracking-wide ${isSelected ? "text-cyan-400 font-bold" : "text-[#b4c9da]"}`}
-                        >
-                          {item.name}
-                        </span>
-                      </div>
-                      {isSelected && (
-                        <span className="hidden sm:flex text-xs text-cyan-400 items-center gap-2">
-                          Press{" "}
-                          <kbd className="bg-cyan-900/50 border border-cyan-400 shadow-sm rounded-md px-2 py-1 uppercase tracking-wider text-[10px] font-bold text-cyan-400">
-                            ↵ Enter
-                          </kbd>
-                        </span>
-                      )}
-                    </button>
+                          >
+                            {item.symbol}
+                          </span>
+                          <span
+                            className={`text-[15px] md:text-[16px] tracking-wide ${isSelected ? "text-cyan-400 font-bold" : "text-[#b4c9da]"}`}
+                          >
+                            {item.name}
+                          </span>
+                        </div>
+                        {isSelected && (
+                          <span className="hidden sm:flex text-xs text-cyan-400 items-center gap-2">
+                            Press{" "}
+                            <kbd className="bg-cyan-900/50 border border-cyan-400 shadow-sm rounded-md px-2 py-1 uppercase tracking-wider text-[10px] font-bold text-cyan-400">
+                              ↵ Enter
+                            </kbd>
+                          </span>
+                        )}
+                      </button>
                     </React.Fragment>
                   );
                 })}
@@ -3214,13 +3685,20 @@ export default function App() {
                 onKeyDown={(e) => {
                   if (e.key === "ArrowDown") {
                     e.preventDefault();
-                    setBroadcastSelectedIndex((prev) => (prev + 1) % broadcastStudentList.length);
+                    setBroadcastSelectedIndex(
+                      (prev) => (prev + 1) % broadcastStudentList.length,
+                    );
                   } else if (e.key === "ArrowUp") {
                     e.preventDefault();
-                    setBroadcastSelectedIndex((prev) => (prev - 1 + broadcastStudentList.length) % broadcastStudentList.length);
+                    setBroadcastSelectedIndex(
+                      (prev) =>
+                        (prev - 1 + broadcastStudentList.length) %
+                        broadcastStudentList.length,
+                    );
                   } else if (e.key === "Enter") {
                     e.preventDefault();
-                    const student = broadcastStudentList[broadcastSelectedIndex];
+                    const student =
+                      broadcastStudentList[broadcastSelectedIndex];
                     simulateBroadcastReply(student);
                   } else if (e.key === "Escape") {
                     setIsBroadcastPaletteOpen(false);
@@ -3267,8 +3745,12 @@ export default function App() {
             </div>
             {/* Status Footer */}
             <div className="bg-gray-100 px-4 md:px-6 py-3 md:py-4 border-t border-gray-200 flex justify-between items-center shrink-0">
-              <span className="text-sm tracking-wide text-gray-500 font-medium">Peer-to-Peer Help Broadcast</span>
-              <span className="text-xs tracking-wider text-gray-400 uppercase hidden sm:inline">Use arrows to select</span>
+              <span className="text-sm tracking-wide text-gray-500 font-medium">
+                Peer-to-Peer Help Broadcast
+              </span>
+              <span className="text-xs tracking-wider text-gray-400 uppercase hidden sm:inline">
+                Use arrows to select
+              </span>
             </div>
           </div>
         </div>
@@ -3282,7 +3764,9 @@ export default function App() {
             onClick={() => setIsFractionDialogOpen(false)}
           />
           <div className="relative w-full max-w-[320px] bg-[#ffffff] rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col p-6 animate-in fade-in zoom-in-95">
-            <h3 className="text-xl font-bold text-[#112a3d] mb-4 text-center">Insert Fraction</h3>
+            <h3 className="text-xl font-bold text-[#112a3d] mb-4 text-center">
+              Insert Fraction
+            </h3>
             <div className="flex flex-col items-center gap-3">
               <input
                 ref={fractionNumRef}
@@ -3290,7 +3774,9 @@ export default function App() {
                 onChange={(e) => {
                   const val = e.target.value;
                   if (/[A-Za-z]/.test(val)) {
-                    speakText("Please type a number. Current field: numerator.");
+                    speakText(
+                      "Please type a number. Current field: numerator.",
+                    );
                   } else {
                     setFractionNum(val);
                   }
@@ -3299,7 +3785,9 @@ export default function App() {
                   if (e.key === "Enter") {
                     e.preventDefault();
                     if (fractionNum && fractionDen) {
-                      insertMultipleSymbols(Array.from(`${fractionNum}/${fractionDen}`));
+                      insertMultipleSymbols(
+                        Array.from(`${fractionNum}/${fractionDen}`),
+                      );
                       setIsFractionDialogOpen(false);
                     } else {
                       document.getElementById("frac-den")?.focus();
@@ -3319,7 +3807,9 @@ export default function App() {
                 onChange={(e) => {
                   const val = e.target.value;
                   if (/[A-Za-z]/.test(val)) {
-                    speakText("Please type a number. Current field: denominator.");
+                    speakText(
+                      "Please type a number. Current field: denominator.",
+                    );
                   } else {
                     setFractionDen(val);
                   }
@@ -3328,7 +3818,9 @@ export default function App() {
                   if (e.key === "Enter") {
                     e.preventDefault();
                     if (fractionNum && fractionDen) {
-                      insertMultipleSymbols(Array.from(`${fractionNum}/${fractionDen}`));
+                      insertMultipleSymbols(
+                        Array.from(`${fractionNum}/${fractionDen}`),
+                      );
                       setIsFractionDialogOpen(false);
                     }
                   } else if (e.key === "Escape") {
@@ -3340,7 +3832,9 @@ export default function App() {
                 autoComplete="off"
               />
             </div>
-            <p className="text-xs text-gray-500 text-center mt-5">Enter numbers and press Enter</p>
+            <p className="text-xs text-gray-500 text-center mt-5">
+              Enter numbers and press Enter
+            </p>
           </div>
         </div>
       )}
@@ -3416,37 +3910,59 @@ export default function App() {
                     onClick={() => {
                       setIsHelpMenuOpen(false);
                       if (item.action === "toggle_mute") {
-                        setIsAudioMuted(prev => !prev);
-                        if (!isAudioMuted && "speechSynthesis" in window) window.speechSynthesis.cancel();
+                        setIsAudioMuted((prev) => !prev);
+                        if (!isAudioMuted && "speechSynthesis" in window)
+                          window.speechSynthesis.cancel();
                       } else if (item.action === "focus_navbar") {
                         setTimeout(() => {
-                          const toolbar = document.querySelector('[role="toolbar"]');
+                          const toolbar =
+                            document.querySelector('[role="toolbar"]');
                           if (toolbar) {
-                             const focusables = Array.from(
-                               toolbar.querySelectorAll<HTMLElement>('button, input')
-                             ).filter(el => !el.hasAttribute('disabled') && el.offsetParent !== null && (el.tagName !== "INPUT" || (el as HTMLInputElement).type === "button" || (el as HTMLInputElement).type === "text" || (el as HTMLInputElement).type === "date"));
-                             
-                             if (focusables.length > 0) {
-                               const activeItem = focusables.find(el => el.tabIndex === 0) || focusables[0];
-                               activeItem.focus();
-                               speakText("Navbar focused. Use left and right arrow keys to navigate.");
-                             }
+                            const focusables = Array.from(
+                              toolbar.querySelectorAll<HTMLElement>(
+                                "button, input",
+                              ),
+                            ).filter(
+                              (el) =>
+                                !el.hasAttribute("disabled") &&
+                                el.offsetParent !== null &&
+                                (el.tagName !== "INPUT" ||
+                                  (el as HTMLInputElement).type === "button" ||
+                                  (el as HTMLInputElement).type === "text" ||
+                                  (el as HTMLInputElement).type === "date"),
+                            );
+
+                            if (focusables.length > 0) {
+                              const activeItem =
+                                focusables.find((el) => el.tabIndex === 0) ||
+                                focusables[0];
+                              activeItem.focus();
+                              speakText(
+                                "Navbar focused. Use left and right arrow keys to navigate.",
+                              );
+                            }
                           }
                         }, 50);
-                      } else if (item.action === "command_palette") setIsCommandPaletteOpen(true);
-                      else if (item.action === "evaluate_math") executeEvaluateMath();
+                      } else if (item.action === "command_palette")
+                        setIsCommandPaletteOpen(true);
+                      else if (item.action === "evaluate_math")
+                        executeEvaluateMath();
                       else if (item.action === "open_calculator") {
-                         setIsCommandPaletteOpen(false);
-                         setIsCalculatorOpen(true);
-                      }
-                      else if (item.action === "raise_hand") executeRaiseHand();
-                      else if (item.action === "toggle_scratchpad") toggleScratchpad();
-                      else if (item.action === "context_locator") triggerContextLocator();
+                        setIsCommandPaletteOpen(false);
+                        setIsCalculatorOpen(true);
+                      } else if (item.action === "raise_hand")
+                        executeRaiseHand();
+                      else if (item.action === "toggle_scratchpad")
+                        toggleScratchpad();
+                      else if (item.action === "context_locator")
+                        triggerContextLocator();
                       else if (item.action === "undo") executeUndo();
                       else if (item.action === "redo") executeRedo();
-                      else if (item.action === "broadcast_line") openBroadcastDialog();
+                      else if (item.action === "broadcast_line")
+                        openBroadcastDialog();
                       else if (item.action === "pass_control") passControl();
-                      else if (item.action === "start_group_work") toggleGroupWork();
+                      else if (item.action === "start_group_work")
+                        toggleGroupWork();
                     }}
                     onMouseEnter={() => setHelpMenuSelectedIndex(index)}
                     className={`w-full flex items-center justify-between px-4 md:px-6 py-3 text-left transition-all outline-none border-l-4
@@ -3454,7 +3970,9 @@ export default function App() {
                           `}
                   >
                     <div className="flex flex-col gap-1">
-                      <span className={`text-[15px] md:text-[16px] tracking-wide ${isSelected ? "text-blue-900 font-medium" : "text-gray-600"}`}>
+                      <span
+                        className={`text-[15px] md:text-[16px] tracking-wide ${isSelected ? "text-blue-900 font-medium" : "text-gray-600"}`}
+                      >
                         {item.name}
                       </span>
                       <span className="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-0.5 rounded w-fit text-left">
