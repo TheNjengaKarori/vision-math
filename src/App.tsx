@@ -872,6 +872,9 @@ export default function App() {
   const handleToolbarKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        e.stopPropagation();
+        e.nativeEvent.stopImmediatePropagation();
+
         const target = e.target as HTMLElement;
 
         if (
@@ -2744,7 +2747,7 @@ export default function App() {
                 <path d="M15 18l-6-6 6-6" />
               </svg>
             </button>
-            <div className="flex items-center text-[13px] sm:text-[14px] tracking-wide font-medium space-x-1 sm:space-x-2 ml-2 min-w-0 overflow-x-auto no-scrollbar mask-fade-right">
+            <div className="flex items-center text-[13px] sm:text-[14px] tracking-wide font-medium space-x-1 sm:space-x-2 ml-2 min-w-0 overflow-x-auto no-scrollbar mask-fade-right py-3">
               <input
                 type="text"
                 value={className}
@@ -2864,7 +2867,7 @@ export default function App() {
             )}
           </div>
 
-          <div className="flex justify-end gap-1 sm:gap-2 px-1 sm:px-2 items-center overflow-x-auto no-scrollbar flex-1 min-w-0">
+          <div className="flex justify-end gap-1 sm:gap-2 px-1 sm:px-2 py-3 items-center overflow-x-auto no-scrollbar flex-1 min-w-0">
             <div className="flex gap-0.5 sm:gap-2 items-center flex-nowrap">
               <button
                 onClick={executeRaiseHand}

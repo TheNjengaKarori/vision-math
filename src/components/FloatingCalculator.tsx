@@ -141,6 +141,12 @@ export function FloatingCalculator({
     // Only handle if in floating calculator
     const key = e.key;
 
+    // Prevent global keydown handlers from intercepting arrow keys in calculator
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
+      e.stopPropagation();
+      e.nativeEvent.stopImmediatePropagation();
+    }
+
     if ((e.ctrlKey || e.metaKey) && e.code === "Digit1") {
       e.preventDefault();
       setViewMode("standard");
