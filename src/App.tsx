@@ -1809,6 +1809,15 @@ export default function App() {
         return;
       }
 
+      // Reply to Broadcast with Ctrl+J or Cmd+J
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "j") {
+        e.preventDefault();
+        if (broadcastReply && !isScratchpadOpen) {
+          toggleScratchpad();
+        }
+        return;
+      }
+
       // Group Work with Ctrl+G or Cmd+G
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "g") {
         e.preventDefault();
@@ -2190,6 +2199,8 @@ export default function App() {
     isBroadcastPaletteOpen,
     toggleScratchpad,
     isSubmitted,
+    broadcastReply,
+    isScratchpadOpen,
   ]);
 
   useEffect(() => {
@@ -2728,10 +2739,10 @@ export default function App() {
       </div>
       <div className="relative z-10 flex flex-col pointer-events-auto shadow-md">
         {/* Status Bar */}
-        <div className="flex justify-start items-center px-4 py-1.5 bg-[#163e5b] text-[#b4c9da] text-xs font-semibold h-[24px]">
+        <div className="flex justify-start items-center px-4 py-1.5 bg-[#163e5b] text-[#b4c9da] text-sm font-semibold h-[24px]">
           {isGroupWork && (
             <span
-              className={`px-2 py-0.5 rounded-sm text-[10px] uppercase tracking-wider font-bold ${
+              className={`px-2 py-0.5 rounded-sm text-base uppercase tracking-wider font-bold ${
                 hasControl
                   ? "bg-green-500/20 text-green-300 border border-green-400/30"
                   : "bg-orange-500/20 text-orange-300 border border-orange-400/30"
@@ -2747,7 +2758,7 @@ export default function App() {
             onClick={() => setCurrentView("teacher")}
             onMouseEnter={() => speakText("Open Teacher View")}
             onFocus={() => speakText("Open Teacher View")}
-            className="flex items-center gap-1.5 px-2 py-0.5 ml-8 rounded-sm bg-blue-500/10 hover:bg-blue-500/30 border border-blue-400/20 hover:border-blue-400/50 text-[10px] uppercase tracking-wider font-bold transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-1 focus:ring-white/20"
+            className="flex items-center gap-1.5 px-2 py-0.5 ml-8 rounded-sm bg-blue-500/10 hover:bg-blue-500/30 border border-blue-400/20 hover:border-blue-400/50 text-base uppercase tracking-wider font-bold transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-1 focus:ring-white/20"
             title="Open Teacher Feed View"
           >
             Teacher View
@@ -2760,7 +2771,13 @@ export default function App() {
           aria-label="Main Toolbar"
           onKeyDown={handleToolbarKeyDown}
         >
-          <div className="flex items-center flex-1 min-w-0 pr-2">
+          {broadcastReply && !isScratchpadOpen && (
+            <div
+              className="absolute inset-x-0 bottom-0 h-[3px] bg-[#facc15] shadow-[0_3px_15px_rgba(250,204,21,0.8)] z-30 animate-pulse [animation-duration:3s]"
+              aria-hidden="true"
+            ></div>
+          )}
+          <div className="flex items-center w-auto max-w-[45%] lg:max-w-[30%] shrink min-w-0 pr-2">
             <button
               onMouseEnter={() => speakText("Go back")}
               onFocus={() => speakText("Go back")}
@@ -2781,7 +2798,7 @@ export default function App() {
                 <path d="M15 18l-6-6 6-6" />
               </svg>
             </button>
-            <div className="flex items-center text-[13px] sm:text-[14px] tracking-wide font-medium space-x-1 sm:space-x-2 ml-2 min-w-0 overflow-x-auto no-scrollbar mask-fade-right py-3">
+            <div className="flex items-center text-lg sm:text-[14px] tracking-wide font-medium space-x-1 sm:space-x-2 ml-2 min-w-0 overflow-x-auto no-scrollbar mask-fade-right py-3">
               <input
                 type="text"
                 value={className}
@@ -2804,7 +2821,7 @@ export default function App() {
                   tabIndex={-1}
                   onMouseEnter={() => speakText(`Subject: ${subject}`)}
                   onFocus={() => speakText(`Subject: ${subject}`)}
-                  className="bg-transparent outline-none w-[80px] sm:w-[100px] border-b border-transparent focus:border-transparent focus:ring-[8px] focus:ring-[#facc15] px-1 py-0.5 rounded cursor-text hover:bg-white/5 transition-colors placeholder-white uppercase tracking-widest text-[12px] sm:text-[13px] text-white font-semibold focus:text-white"
+                  className="bg-transparent outline-none w-[80px] sm:w-[100px] border-b border-transparent focus:border-transparent focus:ring-[8px] focus:ring-[#facc15] px-1 py-0.5 rounded cursor-text hover:bg-white/5 transition-colors placeholder-white uppercase tracking-widest text-base sm:text-lg text-white font-semibold focus:text-white"
                   placeholder="SUBJECT"
                 />
               </div>
@@ -2818,7 +2835,7 @@ export default function App() {
                   tabIndex={-1}
                   onMouseEnter={() => speakText(`Lesson: ${lesson}`)}
                   onFocus={() => speakText(`Lesson: ${lesson}`)}
-                  className="bg-transparent outline-none min-w-[70px] max-w-[200px] px-2 py-0.5 cursor-text hover:bg-white/10 transition-colors placeholder-white/50 text-center text-white text-[12px] sm:text-[13px] tracking-widest uppercase box-content focus:ring-[8px] focus:ring-[#facc15] rounded"
+                  className="bg-transparent outline-none min-w-[70px] max-w-[200px] px-2 py-0.5 cursor-text hover:bg-white/10 transition-colors placeholder-white/50 text-center text-white text-base sm:text-lg tracking-widest uppercase box-content focus:ring-[8px] focus:ring-[#facc15] rounded"
                   style={{ width: `${Math.max(lesson.length, 6) * 1.1}ch` }}
                   placeholder="LESSON"
                 />
@@ -2841,7 +2858,7 @@ export default function App() {
                   <line x1="8" y1="2" x2="8" y2="6"></line>
                   <line x1="3" y1="10" x2="21" y2="10"></line>
                 </svg>
-                <span className="text-[#b4c9da] group-hover:text-white transition-colors text-[12px] sm:text-[13px] tracking-wide whitespace-nowrap">
+                <span className="text-[#b4c9da] group-hover:text-white transition-colors text-base sm:text-lg tracking-wide whitespace-nowrap">
                   {(() => {
                     if (!date) return "DATE";
                     const d = new Date(date + "T00:00:00");
@@ -2868,14 +2885,14 @@ export default function App() {
           </div>
 
           {/* Centered Controls Overlay */}
-          <div className="absolute left-1/2 top-0 h-full -translate-x-1/2 flex flex-col justify-center items-center pointer-events-none z-10">
+          <div className="absolute left-1/2 bottom-0 translate-y-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-none z-[40]">
             {broadcastReply && !isScratchpadOpen && (
               <button
                 onClick={() => toggleScratchpad()}
                 tabIndex={-1}
-                className="absolute top-12 text-sm font-bold animate-pulse px-4 py-1.5 rounded-full bg-cyan-900/50 text-cyan-300 border border-cyan-400/50 hover:bg-cyan-800/80 hover:text-white pointer-events-auto shadow-[0_0_15px_rgba(34,211,238,0.3)] backdrop-blur-md transition-all flex items-center gap-2 whitespace-nowrap"
+                className="text-base font-extrabold px-4 py-1.5 rounded-full bg-[#facc15] text-[#112a3d] hover:bg-[#e6b800] pointer-events-auto shadow-[0_4px_20px_rgba(250,204,21,0.4)] backdrop-blur-md transition-all flex items-center gap-2 whitespace-nowrap outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b]"
               >
-                <MessageSquare size={16} className="text-cyan-400" />
+                <MessageSquare size={16} className="text-[#112a3d]" />
                 Reply from {broadcastReply.student}
               </button>
             )}
@@ -2887,7 +2904,7 @@ export default function App() {
               tabIndex={-1}
               onMouseEnter={() => speakText("Raise Hand for help")}
               onFocus={() => speakText("Raise Hand for help")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0 ml-auto"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-base font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0 ml-auto"
             >
               <Hand size={18} />
               <span className="hidden xl:inline">Hand</span>
@@ -2897,7 +2914,7 @@ export default function App() {
               tabIndex={-1}
               onMouseEnter={() => speakText("Refresh to default equation")}
               onFocus={() => speakText("Refresh to default equation")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-base font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
             >
               <RefreshCw size={18} />
               <span className="hidden xl:inline">Refresh</span>
@@ -2907,7 +2924,7 @@ export default function App() {
               tabIndex={-1}
               onMouseEnter={() => speakText("Start a new lesson")}
               onFocus={() => speakText("Start a new lesson")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-base font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
             >
               <FilePlus size={18} />
               <span className="hidden xl:inline">New</span>
@@ -2924,7 +2941,7 @@ export default function App() {
                     speakText("Hear explanation of your work")
                   }
                   onFocus={() => speakText("Hear explanation of your work")}
-                  className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 border border-transparent hover:border-blue-300 text-[13px] lg:text-sm font-medium transition-all text-white shadow-sm outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
+                  className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 border border-transparent hover:border-blue-300 text-lg lg:text-base font-medium transition-all text-white shadow-sm outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
                   title="Hear explanation of your work"
                 >
                   <PlayCircle size={18} />
@@ -2935,7 +2952,7 @@ export default function App() {
                   tabIndex={-1}
                   onMouseEnter={() => speakText("Proceed to next question")}
                   onFocus={() => speakText("Proceed to next question")}
-                  className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-green-600 hover:bg-green-500 border border-transparent hover:border-green-300 text-[13px] lg:text-sm font-medium transition-all text-white shadow-sm outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
+                  className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-green-600 hover:bg-green-500 border border-transparent hover:border-green-300 text-lg lg:text-base font-medium transition-all text-white shadow-sm outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
                   title="Proceed to next question"
                 >
                   <ArrowRight size={18} />
@@ -2957,7 +2974,7 @@ export default function App() {
                       "Press Control+R or command+R to clear all inputs for the next student.",
                     )
                   }
-                  className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-red-500/20 border border-transparent text-[13px] lg:text-sm font-medium transition-all text-red-400 hover:text-red-300 outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
+                  className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-red-500/20 border border-transparent text-lg lg:text-base font-medium transition-all text-red-400 hover:text-red-300 outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
                   title="Reset for next user"
                 >
                   <RefreshCw size={18} />
@@ -2968,7 +2985,7 @@ export default function App() {
                   tabIndex={-1}
                   onMouseEnter={() => speakText("Save current lesson")}
                   onFocus={() => speakText("Save current lesson")}
-                  className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-[13px] lg:text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
+                  className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-lg lg:text-base font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
                   title="Save current lesson"
                 >
                   <Save size={18} />
@@ -2987,7 +3004,7 @@ export default function App() {
                       "Submit assignment. Shortcut is Command or Control S.",
                     )
                   }
-                  className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-cyan-600 hover:bg-cyan-500 border border-transparent hover:border-cyan-300 text-[13px] lg:text-sm font-medium transition-all text-white shadow-sm outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
+                  className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-cyan-600 hover:bg-cyan-500 border border-transparent hover:border-cyan-300 text-lg lg:text-base font-medium transition-all text-white shadow-sm outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
                   title="Submit assignment"
                 >
                   <Send size={18} />
@@ -3011,15 +3028,18 @@ export default function App() {
                   "Open Math Tool Palette. Shortcut is Command or Control K.",
                 )
               }
-              className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-[13px] lg:text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
+              className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-lg lg:text-base font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
               title="Open Math Tool Palette"
             >
               <Calculator size={18} />
-              <span className="hidden xl:inline">Tools</span>
-              <kbd className="hidden lg:inline-block bg-white/20 border border-white/50 rounded px-1.5 py-0.5 text-[10px] font-mono text-white font-bold whitespace-nowrap">
+              <span className="hidden xl:inline">Toolkit</span>
+              <kbd className="hidden lg:inline-block bg-white/20 border border-white/50 rounded px-1.5 py-0.5 text-base font-mono text-white font-bold whitespace-nowrap">
                 ⌘K
               </kbd>
             </button>
+
+            {/* Spacer to ensure last item is fully visible and has padding in scrollable container */}
+            <div className="w-2 sm:w-4 shrink-0" aria-hidden="true"></div>
           </div>
         </div>
       </div>
@@ -3047,7 +3067,7 @@ export default function App() {
           >
             <div className="max-w-3xl mx-auto space-y-6 text-[#b4c9da]">
               <div className="flex items-center gap-3 text-blue-400">
-                <h2 className="text-sm font-bold uppercase tracking-widest text-[#ffffff]">
+                <h2 className="text-base font-bold uppercase tracking-widest text-[#ffffff]">
                   Module 4: Operations
                 </h2>
               </div>
@@ -3080,7 +3100,7 @@ export default function App() {
               }}
               aria-pressed={isAudioMuted}
               tabIndex={-1}
-              className={`absolute top-4 right-4 pointer-events-auto flex items-center justify-center gap-1.5 h-8 px-3 rounded-md font-bold text-sm tracking-wide outline-none transition-all focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] bg-[#FFFF00] text-black hover:bg-[#e6e600] shadow-sm`}
+              className={`absolute top-4 right-4 pointer-events-auto flex items-center justify-center gap-1.5 h-8 px-3 rounded-md font-bold text-base tracking-wide outline-none transition-all focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] bg-[#FFFF00] text-black hover:bg-[#e6e600] shadow-sm`}
             >
               {!isAudioMuted ? (
                 <Volume2 size={16} className="shrink-0" />
@@ -3205,7 +3225,7 @@ export default function App() {
                         suggestion &&
                         currentActiveCell.r === r && (
                           <div
-                            className="absolute bg-[#163e5b]/95 backdrop-blur-md border border-[#316995]/50 text-white px-3 py-2 rounded-lg shadow-xl text-[12px] font-sans font-medium whitespace-nowrap z-50 pointer-events-none flex flex-col origin-top-left animate-in fade-in zoom-in-95 duration-100"
+                            className="absolute bg-[#163e5b]/95 backdrop-blur-md border border-[#316995]/50 text-white px-3 py-2 rounded-lg shadow-xl text-base font-sans font-medium whitespace-nowrap z-50 pointer-events-none flex flex-col origin-top-left animate-in fade-in zoom-in-95 duration-100"
                             style={{
                               top: 46 + 4,
                               left: suggestion.startC * 46,
@@ -3215,7 +3235,7 @@ export default function App() {
                               <span className="text-white text-[18px] font-medium leading-none">
                                 {suggestion.symbol}
                               </span>
-                              <span className="text-[#b4c9da] text-xs font-light tracking-wide">
+                              <span className="text-[#b4c9da] text-sm font-light tracking-wide">
                                 {suggestion.name}
                               </span>
                             </div>
@@ -3272,17 +3292,17 @@ export default function App() {
         >
           <div className="px-6 py-4 bg-[#111] border-b border-white/5 flex justify-between items-center shadow-sm shrink-0">
             <div>
-              <h2 className="text-sm font-bold tracking-widest text-[#e8e8e8] uppercase">
+              <h2 className="text-base font-bold tracking-widest text-[#e8e8e8] uppercase">
                 Scratchpad
               </h2>
-              <p className="text-xs text-[#888] mt-1 font-light">
+              <p className="text-sm text-[#888] mt-1 font-light">
                 Work here is not saved or graded
               </p>
             </div>
             <div className="flex gap-4 items-center">
               <button
                 onClick={toggleScratchpad}
-                className="hidden sm:inline-flex items-center gap-1 bg-white/10 hover:bg-white/20 transition-colors border border-white/10 rounded px-2 py-1 text-[10px] font-mono text-white/70"
+                className="hidden sm:inline-flex items-center gap-1 bg-white/10 hover:bg-white/20 transition-colors border border-white/10 rounded px-2 py-1 text-base font-mono text-white/70"
                 title="Close Scratchpad (Esc)"
               >
                 Close
@@ -3298,11 +3318,11 @@ export default function App() {
               <div className="m-6 mb-2 p-5 rounded-2xl bg-cyan-900/30 border border-cyan-400/40 text-[#b4c9da] shadow-lg relative overflow-hidden backdrop-blur-md">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-400/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
                 <div className="flex items-center gap-3 mb-4 relative z-10">
-                  <div className="bg-cyan-400/20 text-cyan-300 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest ring-1 ring-cyan-400/30 flex items-center gap-1.5">
+                  <div className="bg-cyan-400/20 text-cyan-300 px-2.5 py-1 rounded-md text-base font-bold uppercase tracking-widest ring-1 ring-cyan-400/30 flex items-center gap-1.5">
                     <MessageSquare size={12} className="text-cyan-400" />
                     Peer Reply
                   </div>
-                  <div className="text-sm font-semibold text-white">
+                  <div className="text-base font-semibold text-white">
                     from {broadcastReply.student}
                   </div>
                   <button
@@ -3319,7 +3339,7 @@ export default function App() {
                   <div className="mt-0.5 text-cyan-400 shrink-0 bg-cyan-900/50 p-1.5 rounded-full">
                     <MessageSquare size={14} className="fill-cyan-400/20" />
                   </div>
-                  <div className="text-sm leading-relaxed text-cyan-100 font-medium">
+                  <div className="text-base leading-relaxed text-cyan-100 font-medium">
                     {broadcastReply.mockFeedback}
                   </div>
                 </div>
@@ -3417,7 +3437,7 @@ export default function App() {
                         suggestion &&
                         currentActiveCell.r === r && (
                           <div
-                            className="absolute bg-[#333]/95 backdrop-blur-md border border-gray-600 text-white px-3 py-2 rounded-lg shadow-xl text-[12px] font-sans font-medium whitespace-nowrap z-50 pointer-events-none flex flex-col origin-top-left animate-in fade-in zoom-in-95 duration-100"
+                            className="absolute bg-[#333]/95 backdrop-blur-md border border-gray-600 text-white px-3 py-2 rounded-lg shadow-xl text-base font-sans font-medium whitespace-nowrap z-50 pointer-events-none flex flex-col origin-top-left animate-in fade-in zoom-in-95 duration-100"
                             style={{
                               top: 46 + 4,
                               left: suggestion.startC * 46,
@@ -3427,7 +3447,7 @@ export default function App() {
                               <span className="text-white text-[18px] font-medium leading-none">
                                 {suggestion.symbol}
                               </span>
-                              <span className="text-gray-400 text-xs font-light tracking-wide">
+                              <span className="text-gray-400 text-sm font-light tracking-wide">
                                 {suggestion.name}
                               </span>
                             </div>
@@ -3511,13 +3531,13 @@ export default function App() {
               >
                 <Volume2 size={20} />
               </button>
-              <kbd className="hidden sm:inline-block bg-[#0c1f2e] border border-[#316995] rounded-md px-2 py-1 text-xs font-mono text-cyan-400 ml-1 font-bold">
+              <kbd className="hidden sm:inline-block bg-[#0c1f2e] border border-[#316995] rounded-md px-2 py-1 text-sm font-mono text-cyan-400 ml-1 font-bold">
                 ESC
               </kbd>
             </div>
 
             {filteredSymbols.length === 0 ? (
-              <div className="py-16 text-center text-[#86a8c3] text-sm md:text-base flex flex-col items-center">
+              <div className="py-16 text-center text-[#86a8c3] text-base md:text-lg flex flex-col items-center">
                 <Calculator size={40} className="text-[#316995] mb-4" />
                 No math symbols found for "{paletteSearch}"
               </div>
@@ -3542,7 +3562,7 @@ export default function App() {
                       {isNavAction && !prevIsNavAction && (
                         <div className="flex items-center gap-3 px-4 md:px-6 py-2 mt-2 mb-1 select-none w-full">
                           <div className="h-[1px] flex-1 bg-[#316995]/30"></div>
-                          <span className="text-[11px] font-bold tracking-wider uppercase text-[#86a8c3]">
+                          <span className="text-base font-bold tracking-wider uppercase text-[#86a8c3]">
                             Navigation Actions
                           </span>
                           <div className="h-[1px] flex-1 bg-[#316995]/30"></div>
@@ -3687,9 +3707,9 @@ export default function App() {
                           </span>
                         </div>
                         {isSelected && (
-                          <span className="hidden sm:flex text-xs text-cyan-400 items-center gap-2">
+                          <span className="hidden sm:flex text-sm text-cyan-400 items-center gap-2">
                             Press{" "}
-                            <kbd className="bg-cyan-900/50 border border-cyan-400 shadow-sm rounded-md px-2 py-1 uppercase tracking-wider text-[10px] font-bold text-cyan-400">
+                            <kbd className="bg-cyan-900/50 border border-cyan-400 shadow-sm rounded-md px-2 py-1 uppercase tracking-wider text-base font-bold text-cyan-400">
                               ↵ Enter
                             </kbd>
                           </span>
@@ -3705,13 +3725,13 @@ export default function App() {
       )}
       {/* Broadcast Dialog Overlay */}
       {isBroadcastPaletteOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-start sm:items-center sm:pt-[15vh] bg-[#112a3d]/80 sm:bg-[#112a3d]/60 backdrop-blur-sm sm:p-4">
+        <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-start sm:items-center sm:pt-[15vh] bg-[#112a3d]/90 backdrop-blur-sm sm:p-4">
           <div
             className="absolute inset-0"
             onClick={() => setIsBroadcastPaletteOpen(false)}
           />
-          <div className="relative w-full sm:max-w-2xl bg-[#ffffff] sm:rounded-2xl shadow-2xl border-t sm:border border-gray-100 overflow-hidden flex flex-col max-h-[60vh] sm:max-h-[70vh]">
-            <div className="flex items-center px-4 md:px-6 border-b border-gray-100 bg-white">
+          <div className="relative w-full sm:max-w-2xl bg-[#0c1f2e] sm:rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.5)] border-t sm:border border-[#316995]/50 overflow-hidden flex flex-col max-h-[60vh] sm:max-h-[70vh]">
+            <div className="flex items-center px-4 md:px-6 border-b border-[#316995]/50 bg-[#112a3d]">
               <input
                 ref={broadcastInputRef}
                 onKeyDown={(e) => {
@@ -3738,14 +3758,14 @@ export default function App() {
                   }
                 }}
                 placeholder="Ask who? Use arrows to select, Enter to send"
-                className="flex-1 py-5 md:py-6 bg-transparent outline-none text-gray-800 text-lg md:text-xl placeholder-gray-400 font-sans tracking-wide"
+                className="flex-1 py-5 md:py-6 bg-transparent outline-none text-white text-lg md:text-xl placeholder-[#86a8c3]/70 font-sans tracking-wide"
                 readOnly
               />
             </div>
 
             <div
               ref={broadcastRef}
-              className="overflow-y-auto no-scrollbar flex-1 bg-gray-50/50 p-2 md:p-3"
+              className="overflow-y-auto no-scrollbar flex-1 bg-[#0c1f2e] p-2 md:p-3"
             >
               {broadcastStudentList.map((student, index) => {
                 const isSelected = index === broadcastSelectedIndex;
@@ -3758,14 +3778,14 @@ export default function App() {
                     onMouseEnter={() => setBroadcastSelectedIndex(index)}
                     className={`w-full text-left px-4 py-4 md:py-5 flex flex-row items-center gap-4 rounded-xl transition-all duration-200 outline-none ${
                       isSelected
-                        ? "bg-blue-600 text-white shadow-md transform scale-[1.01]"
-                        : "bg-transparent text-gray-700 hover:bg-gray-100"
+                        ? "bg-[#163e5b] text-white shadow-md transform scale-[1.01] border border-[#facc15]/50"
+                        : "bg-transparent text-[#b4c9da] hover:bg-white/5 border border-transparent"
                     }`}
                   >
                     <div className="flex-1 min-w-0">
                       <div
-                        className={`text-base md:text-lg font-semibold tracking-wide truncate ${
-                          isSelected ? "text-white" : "text-gray-900"
+                        className={`text-lg md:text-lg font-semibold tracking-wide truncate ${
+                          isSelected ? "text-white font-bold" : "text-[#b4c9da]"
                         }`}
                       >
                         {student}
@@ -3776,11 +3796,11 @@ export default function App() {
               })}
             </div>
             {/* Status Footer */}
-            <div className="bg-gray-100 px-4 md:px-6 py-3 md:py-4 border-t border-gray-200 flex justify-between items-center shrink-0">
-              <span className="text-sm tracking-wide text-gray-500 font-medium">
+            <div className="bg-[#112a3d] px-4 md:px-6 py-3 md:py-4 border-t border-[#316995]/50 flex justify-between items-center shrink-0">
+              <span className="text-base tracking-wide text-[#b4c9da] font-medium">
                 Peer-to-Peer Help Broadcast
               </span>
-              <span className="text-xs tracking-wider text-gray-400 uppercase hidden sm:inline">
+              <span className="text-sm tracking-wider text-[#86a8c3]/70 uppercase hidden sm:inline font-bold border border-[#316995]/30 rounded px-2 py-0.5">
                 Use arrows to select
               </span>
             </div>
@@ -3864,7 +3884,7 @@ export default function App() {
                 autoComplete="off"
               />
             </div>
-            <p className="text-xs text-gray-500 text-center mt-5">
+            <p className="text-sm text-gray-500 text-center mt-5">
               Enter numbers and press Enter
             </p>
           </div>
@@ -3900,18 +3920,18 @@ export default function App() {
 
       {/* Help Menu Overlay */}
       {isHelpMenuOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-start sm:items-center sm:pt-[15vh] bg-[#112a3d]/80 sm:bg-[#112a3d]/60 backdrop-blur-sm sm:p-4">
+        <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-start sm:items-center sm:pt-[15vh] bg-[#112a3d]/90 backdrop-blur-sm sm:p-4">
           <div
             className="absolute inset-0"
             onClick={() => setIsHelpMenuOpen(false)}
           />
-          <div className="relative w-full sm:max-w-2xl bg-[#ffffff] sm:rounded-2xl shadow-2xl border-t sm:border border-gray-100 overflow-hidden flex flex-col max-h-[60vh] sm:max-h-[70vh]">
-            <div className="flex items-center px-4 md:px-6 border-b border-gray-100 bg-white">
+          <div className="relative w-full sm:max-w-2xl bg-[#0c1f2e] sm:rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.5)] border-t sm:border border-[#316995]/50 overflow-hidden flex flex-col max-h-[60vh] sm:max-h-[70vh]">
+            <div className="flex items-center px-4 md:px-6 border-b border-[#316995]/50 bg-[#112a3d]">
               <input
                 ref={helpMenuInputRef}
                 onKeyDown={handleHelpMenuKeyDown}
                 placeholder="Help Menu: Use arrows to navigate, Enter to execute"
-                className="flex-1 py-5 md:py-6 bg-transparent outline-none text-gray-800 text-lg md:text-xl placeholder-gray-400 font-sans tracking-wide"
+                className="flex-1 py-5 md:py-6 bg-transparent outline-none text-white text-lg md:text-xl placeholder-[#86a8c3]/70 font-sans tracking-wide"
                 readOnly
               />
               <button
@@ -3920,19 +3940,19 @@ export default function App() {
                     speakText(HELP_MENU_ITEMS[helpMenuSelectedIndex].text);
                   }
                 }}
-                className="mr-3 p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                className="mr-3 p-2 text-[#86a8c3] hover:text-[#facc15] hover:bg-white/10 rounded-md transition-colors"
                 title="Repeat voice output"
               >
                 <Volume2 size={20} />
               </button>
-              <kbd className="hidden sm:inline-block bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-xs font-mono text-gray-400 ml-1">
+              <kbd className="hidden sm:inline-block bg-[#0c1f2e] border border-[#316995] rounded-md px-2 py-1 text-sm font-mono text-[#86a8c3] ml-1">
                 ESC
               </kbd>
             </div>
 
             <div
               ref={helpMenuRef}
-              className="flex-1 overflow-y-auto py-2 bg-gray-50/50"
+              className="flex-1 overflow-y-auto py-2 bg-[#0c1f2e]"
             >
               {HELP_MENU_ITEMS.map((item, index) => {
                 const isSelected = index === helpMenuSelectedIndex;
@@ -4002,23 +4022,25 @@ export default function App() {
                     }}
                     onMouseEnter={() => setHelpMenuSelectedIndex(index)}
                     className={`w-full flex items-center justify-between px-4 md:px-6 py-3 text-left transition-all outline-none border-l-4
-                             ${isSelected ? "bg-white border-blue-500 shadow-sm" : "border-transparent hover:bg-gray-100/50"}
+                             ${isSelected ? "bg-[#163e5b] border-[#facc15] shadow-sm" : "border-transparent hover:bg-white/5"}
                           `}
                   >
                     <div className="flex flex-col gap-1">
                       <span
-                        className={`text-[15px] md:text-[16px] tracking-wide ${isSelected ? "text-blue-900 font-medium" : "text-gray-600"}`}
+                        className={`text-[15px] md:text-[16px] tracking-wide ${isSelected ? "text-white font-bold" : "text-[#b4c9da]"}`}
                       >
                         {item.name}
                       </span>
-                      <span className="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-0.5 rounded w-fit text-left">
+                      <span
+                        className={`text-sm font-mono px-2 py-0.5 rounded w-fit text-left ${isSelected ? "bg-[#316995] text-white" : "bg-[#112a3d] text-[#86a8c3]"}`}
+                      >
                         {item.shortcut}
                       </span>
                     </div>
                     {isSelected && (
-                      <span className="hidden sm:flex text-xs text-blue-500 items-center gap-2">
+                      <span className="hidden sm:flex text-sm text-[#facc15] items-center gap-2 font-medium">
                         Press{" "}
-                        <kbd className="bg-blue-50 border border-blue-200 shadow-sm rounded-md px-2 py-1 uppercase tracking-wider text-[10px] font-bold text-blue-700">
+                        <kbd className="bg-[#0c1f2e] border border-[#facc15]/50 shadow-sm rounded-md px-2 py-1 uppercase tracking-wider text-base font-bold text-[#facc15]">
                           ↵ Enter
                         </kbd>
                       </span>
