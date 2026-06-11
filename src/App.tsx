@@ -2869,26 +2869,6 @@ export default function App() {
 
           {/* Centered Controls Overlay */}
           <div className="absolute left-1/2 top-0 h-full -translate-x-1/2 flex flex-col justify-center items-center pointer-events-none z-10">
-            <button
-              onClick={() => {
-                setIsAudioMuted(!isAudioMuted);
-                if (!isAudioMuted && "speechSynthesis" in window) {
-                  window.speechSynthesis.cancel();
-                }
-              }}
-              aria-pressed={isAudioMuted}
-              tabIndex={-1}
-              className={`pointer-events-auto flex items-center justify-center gap-1.5 h-8 px-3 rounded-md font-bold text-sm tracking-wide outline-none transition-all focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] bg-[#FFFF00] text-black hover:bg-[#e6e600] shadow-sm`}
-            >
-              {!isAudioMuted ? (
-                <Volume2 size={16} className="shrink-0" />
-              ) : (
-                <VolumeX size={16} className="shrink-0" />
-              )}
-              <span className="whitespace-nowrap shrink-0 hidden sm:inline-block">
-                {!isAudioMuted ? "ON" : "MUTED"}
-              </span>
-            </button>
             {broadcastReply && !isScratchpadOpen && (
               <button
                 onClick={() => toggleScratchpad()}
@@ -3093,9 +3073,26 @@ export default function App() {
                 </p>
               </div>
             </div>
-            <div className="absolute top-4 right-4 bg-blue-500/10 text-blue-300 text-[10px] font-bold px-2 py-1 uppercase tracking-wider rounded border border-blue-400/20">
-              Read-Only
-            </div>
+            <button
+              onClick={() => {
+                setIsAudioMuted(!isAudioMuted);
+                if (!isAudioMuted && "speechSynthesis" in window) {
+                  window.speechSynthesis.cancel();
+                }
+              }}
+              aria-pressed={isAudioMuted}
+              tabIndex={-1}
+              className={`absolute top-4 right-4 pointer-events-auto flex items-center justify-center gap-1.5 h-8 px-3 rounded-md font-bold text-sm tracking-wide outline-none transition-all focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] bg-[#FFFF00] text-black hover:bg-[#e6e600] shadow-sm`}
+            >
+              {!isAudioMuted ? (
+                <Volume2 size={16} className="shrink-0" />
+              ) : (
+                <VolumeX size={16} className="shrink-0" />
+              )}
+              <span className="whitespace-nowrap shrink-0 hidden sm:inline-block">
+                {!isAudioMuted ? "ON" : "MUTED"}
+              </span>
+            </button>
           </nav>
 
           <main
@@ -4000,8 +3997,10 @@ export default function App() {
                       else if (item.action === "pass_control") passControl();
                       else if (item.action === "start_group_work")
                         toggleGroupWork();
-                      else if (item.action === "toggle_submission") toggleSubmission();
-                      else if (item.action === "reset_next_user") resetForNextUser();
+                      else if (item.action === "toggle_submission")
+                        toggleSubmission();
+                      else if (item.action === "reset_next_user")
+                        resetForNextUser();
                     }}
                     onMouseEnter={() => setHelpMenuSelectedIndex(index)}
                     className={`w-full flex items-center justify-between px-4 md:px-6 py-3 text-left transition-all outline-none border-l-4
