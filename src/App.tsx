@@ -2755,7 +2755,7 @@ export default function App() {
         </div>
 
         <div
-          className="flex justify-between items-center h-14 bg-[#163e5b] text-white px-2 border-b-2 border-transparent relative z-20"
+          className="flex justify-between items-center h-14 bg-[#163e5b] text-white pl-2 pr-4 md:pr-8 lg:pr-12 border-b-2 border-transparent relative z-20"
           role="toolbar"
           aria-label="Main Toolbar"
           onKeyDown={handleToolbarKeyDown}
@@ -2881,147 +2881,145 @@ export default function App() {
             )}
           </div>
 
-          <div className="flex justify-end gap-1 sm:gap-2 px-1 sm:px-2 py-3 items-center overflow-x-auto no-scrollbar flex-1 min-w-0">
-            <div className="flex gap-0.5 sm:gap-2 items-center flex-nowrap">
-              <button
-                onClick={executeRaiseHand}
-                tabIndex={-1}
-                onMouseEnter={() => speakText("Raise Hand for help")}
-                onFocus={() => speakText("Raise Hand for help")}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
-              >
-                <Hand size={18} />
-                <span className="hidden xl:inline">Hand</span>
-              </button>
-              <button
-                onClick={refreshEquation}
-                tabIndex={-1}
-                onMouseEnter={() => speakText("Refresh to default equation")}
-                onFocus={() => speakText("Refresh to default equation")}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
-              >
-                <RefreshCw size={18} />
-                <span className="hidden xl:inline">Refresh</span>
-              </button>
-              <button
-                onClick={startNewLesson}
-                tabIndex={-1}
-                onMouseEnter={() => speakText("Start a new lesson")}
-                onFocus={() => speakText("Start a new lesson")}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
-              >
-                <FilePlus size={18} />
-                <span className="hidden xl:inline">New</span>
-              </button>
+          <div className="flex items-center overflow-x-auto no-scrollbar flex-1 min-w-0 px-2 sm:px-4 py-3 gap-0.5 sm:gap-2 [&>*]:shrink-0">
+            <button
+              onClick={executeRaiseHand}
+              tabIndex={-1}
+              onMouseEnter={() => speakText("Raise Hand for help")}
+              onFocus={() => speakText("Raise Hand for help")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0 ml-auto"
+            >
+              <Hand size={18} />
+              <span className="hidden xl:inline">Hand</span>
+            </button>
+            <button
+              onClick={refreshEquation}
+              tabIndex={-1}
+              onMouseEnter={() => speakText("Refresh to default equation")}
+              onFocus={() => speakText("Refresh to default equation")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
+            >
+              <RefreshCw size={18} />
+              <span className="hidden xl:inline">Refresh</span>
+            </button>
+            <button
+              onClick={startNewLesson}
+              tabIndex={-1}
+              onMouseEnter={() => speakText("Start a new lesson")}
+              onFocus={() => speakText("Start a new lesson")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
+            >
+              <FilePlus size={18} />
+              <span className="hidden xl:inline">New</span>
+            </button>
 
-              <div className="w-[1px] h-6 bg-[#316995]/30 mx-0.5 sm:mx-1 shrink-0 hidden sm:block"></div>
+            <div className="w-[1px] h-6 bg-[#316995]/30 mx-0.5 sm:mx-1 shrink-0 hidden sm:block"></div>
 
-              {isSubmitted ? (
-                <>
-                  <button
-                    onClick={hearExplanation}
-                    tabIndex={-1}
-                    onMouseEnter={() =>
-                      speakText("Hear explanation of your work")
-                    }
-                    onFocus={() => speakText("Hear explanation of your work")}
-                    className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 border border-transparent hover:border-blue-300 text-[13px] lg:text-sm font-medium transition-all text-white shadow-sm outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
-                    title="Hear explanation of your work"
-                  >
-                    <PlayCircle size={18} />
-                    <span className="hidden xl:inline">Explain</span>
-                  </button>
-                  <button
-                    onClick={nextQuestion}
-                    tabIndex={-1}
-                    onMouseEnter={() => speakText("Proceed to next question")}
-                    onFocus={() => speakText("Proceed to next question")}
-                    className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-green-600 hover:bg-green-500 border border-transparent hover:border-green-300 text-[13px] lg:text-sm font-medium transition-all text-white shadow-sm outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
-                    title="Proceed to next question"
-                  >
-                    <ArrowRight size={18} />
-                    <span className="hidden xl:inline">Next</span>
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={resetForNextUser}
-                    tabIndex={-1}
-                    onMouseEnter={() =>
-                      speakText(
-                        "Press Control+R or command+R to clear all inputs for the next student.",
-                      )
-                    }
-                    onFocus={() =>
-                      speakText(
-                        "Press Control+R or command+R to clear all inputs for the next student.",
-                      )
-                    }
-                    className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-red-500/20 border border-transparent text-[13px] lg:text-sm font-medium transition-all text-red-400 hover:text-red-300 outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
-                    title="Reset for next user"
-                  >
-                    <RefreshCw size={18} />
-                    <span className="hidden xl:inline">Reset</span>
-                  </button>
-                  <button
-                    onClick={saveLesson}
-                    tabIndex={-1}
-                    onMouseEnter={() => speakText("Save current lesson")}
-                    onFocus={() => speakText("Save current lesson")}
-                    className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-[13px] lg:text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
-                    title="Save current lesson"
-                  >
-                    <Save size={18} />
-                    <span className="hidden xl:inline">Save</span>
-                  </button>
-                  <button
-                    onClick={toggleSubmission}
-                    tabIndex={-1}
-                    onMouseEnter={() =>
-                      speakText(
-                        "Submit assignment. Shortcut is Command or Control S.",
-                      )
-                    }
-                    onFocus={() =>
-                      speakText(
-                        "Submit assignment. Shortcut is Command or Control S.",
-                      )
-                    }
-                    className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-cyan-600 hover:bg-cyan-500 border border-transparent hover:border-cyan-300 text-[13px] lg:text-sm font-medium transition-all text-white shadow-sm outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
-                    title="Submit assignment"
-                  >
-                    <Send size={18} />
-                    <span className="hidden xl:inline">Submit</span>
-                  </button>
-                </>
-              )}
+            {isSubmitted ? (
+              <>
+                <button
+                  onClick={hearExplanation}
+                  tabIndex={-1}
+                  onMouseEnter={() =>
+                    speakText("Hear explanation of your work")
+                  }
+                  onFocus={() => speakText("Hear explanation of your work")}
+                  className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 border border-transparent hover:border-blue-300 text-[13px] lg:text-sm font-medium transition-all text-white shadow-sm outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
+                  title="Hear explanation of your work"
+                >
+                  <PlayCircle size={18} />
+                  <span className="hidden xl:inline">Explain</span>
+                </button>
+                <button
+                  onClick={nextQuestion}
+                  tabIndex={-1}
+                  onMouseEnter={() => speakText("Proceed to next question")}
+                  onFocus={() => speakText("Proceed to next question")}
+                  className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-green-600 hover:bg-green-500 border border-transparent hover:border-green-300 text-[13px] lg:text-sm font-medium transition-all text-white shadow-sm outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
+                  title="Proceed to next question"
+                >
+                  <ArrowRight size={18} />
+                  <span className="hidden xl:inline">Next</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={resetForNextUser}
+                  tabIndex={-1}
+                  onMouseEnter={() =>
+                    speakText(
+                      "Press Control+R or command+R to clear all inputs for the next student.",
+                    )
+                  }
+                  onFocus={() =>
+                    speakText(
+                      "Press Control+R or command+R to clear all inputs for the next student.",
+                    )
+                  }
+                  className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-red-500/20 border border-transparent text-[13px] lg:text-sm font-medium transition-all text-red-400 hover:text-red-300 outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
+                  title="Reset for next user"
+                >
+                  <RefreshCw size={18} />
+                  <span className="hidden xl:inline">Reset</span>
+                </button>
+                <button
+                  onClick={saveLesson}
+                  tabIndex={-1}
+                  onMouseEnter={() => speakText("Save current lesson")}
+                  onFocus={() => speakText("Save current lesson")}
+                  className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-[13px] lg:text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
+                  title="Save current lesson"
+                >
+                  <Save size={18} />
+                  <span className="hidden xl:inline">Save</span>
+                </button>
+                <button
+                  onClick={toggleSubmission}
+                  tabIndex={-1}
+                  onMouseEnter={() =>
+                    speakText(
+                      "Submit assignment. Shortcut is Command or Control S.",
+                    )
+                  }
+                  onFocus={() =>
+                    speakText(
+                      "Submit assignment. Shortcut is Command or Control S.",
+                    )
+                  }
+                  className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-cyan-600 hover:bg-cyan-500 border border-transparent hover:border-cyan-300 text-[13px] lg:text-sm font-medium transition-all text-white shadow-sm outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
+                  title="Submit assignment"
+                >
+                  <Send size={18} />
+                  <span className="hidden xl:inline">Submit</span>
+                </button>
+              </>
+            )}
 
-              <div className="w-[1px] h-6 bg-[#316995]/30 mx-0.5 lg:mx-1 shrink-0 hidden sm:block"></div>
+            <div className="w-[1px] h-6 bg-[#316995]/30 mx-0.5 lg:mx-1 shrink-0 hidden sm:block"></div>
 
-              <button
-                onClick={() => setIsCommandPaletteOpen(true)}
-                tabIndex={-1}
-                onMouseEnter={() =>
-                  speakText(
-                    "Open Math Tool Palette. Shortcut is Command or Control K.",
-                  )
-                }
-                onFocus={() =>
-                  speakText(
-                    "Open Math Tool Palette. Shortcut is Command or Control K.",
-                  )
-                }
-                className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-[13px] lg:text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
-                title="Open Math Tool Palette"
-              >
-                <Calculator size={18} />
-                <span className="hidden xl:inline">Tools</span>
-                <kbd className="hidden lg:inline-block bg-white/20 border border-white/50 rounded px-1.5 py-0.5 text-[10px] font-mono text-white font-bold whitespace-nowrap">
-                  ⌘K
-                </kbd>
-              </button>
-            </div>
+            <button
+              onClick={() => setIsCommandPaletteOpen(true)}
+              tabIndex={-1}
+              onMouseEnter={() =>
+                speakText(
+                  "Open Math Tool Palette. Shortcut is Command or Control K.",
+                )
+              }
+              onFocus={() =>
+                speakText(
+                  "Open Math Tool Palette. Shortcut is Command or Control K.",
+                )
+              }
+              className="flex items-center gap-1.5 px-2 lg:px-3 py-1.5 rounded-md bg-transparent hover:bg-white/10 border border-transparent text-[13px] lg:text-sm font-medium transition-all text-[#b4c9da] hover:text-white outline-none focus:ring-[8px] focus:ring-[#facc15] focus:ring-offset-2 focus:ring-offset-[#163e5b] whitespace-nowrap shrink-0"
+              title="Open Math Tool Palette"
+            >
+              <Calculator size={18} />
+              <span className="hidden xl:inline">Tools</span>
+              <kbd className="hidden lg:inline-block bg-white/20 border border-white/50 rounded px-1.5 py-0.5 text-[10px] font-mono text-white font-bold whitespace-nowrap">
+                ⌘K
+              </kbd>
+            </button>
           </div>
         </div>
       </div>
