@@ -576,6 +576,24 @@ const HELP_MENU_ITEMS = [
     action: "redo",
   },
   {
+    name: "Group Work",
+    shortcut: "Ctrl / Cmd + G",
+    text: "To toggle group work: Control or Command, G",
+    action: "start_group_work",
+  },
+  {
+    name: "Submit Work",
+    shortcut: "Ctrl / Cmd + S",
+    text: "To submit your work: Control or Command, S",
+    action: "toggle_submission",
+  },
+  {
+    name: "Reset Grid",
+    shortcut: "Ctrl / Cmd + R",
+    text: "To reset grid for next user: Control or Command, R",
+    action: "reset_next_user",
+  },
+  {
     name: "Help Menu",
     shortcut: "Shift + ?",
     text: "To open this help menu: Shift, Question Mark",
@@ -1791,6 +1809,20 @@ export default function App() {
         return;
       }
 
+      // Group Work with Ctrl+G or Cmd+G
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "g") {
+        e.preventDefault();
+        toggleGroupWork();
+        return;
+      }
+
+      // Help Menu with Shift + ?
+      if (e.shiftKey && e.key === "?") {
+        e.preventDefault();
+        setIsHelpMenuOpen((prev) => !prev);
+        return;
+      }
+
       // Pass control with Ctrl+P or Cmd+P
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "p") {
         e.preventDefault();
@@ -2496,6 +2528,8 @@ export default function App() {
         else if (item.action === "broadcast_line") openBroadcastDialog();
         else if (item.action === "pass_control") passControl();
         else if (item.action === "start_group_work") toggleGroupWork();
+        else if (item.action === "toggle_submission") toggleSubmission();
+        else if (item.action === "reset_next_user") resetForNextUser();
       }
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -3966,6 +4000,8 @@ export default function App() {
                       else if (item.action === "pass_control") passControl();
                       else if (item.action === "start_group_work")
                         toggleGroupWork();
+                      else if (item.action === "toggle_submission") toggleSubmission();
+                      else if (item.action === "reset_next_user") resetForNextUser();
                     }}
                     onMouseEnter={() => setHelpMenuSelectedIndex(index)}
                     className={`w-full flex items-center justify-between px-4 md:px-6 py-3 text-left transition-all outline-none border-l-4
