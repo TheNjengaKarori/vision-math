@@ -151,7 +151,7 @@ export const TeacherFeedView: React.FC<TeacherFeedViewProps> = ({
             onClick={onBackToStudent}
             className="text-sm px-4 py-2 bg-cyan-900/40 text-cyan-400 font-bold rounded-md hover:bg-cyan-900/60 hover:text-white transition-colors"
           >
-            Switch to Lab View
+            Switch to Student View
           </button>
         </div>
         <div className="flex bg-[#112a3d] p-1 rounded-lg">
