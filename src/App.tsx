@@ -3067,27 +3067,27 @@ export default function App() {
           >
             <div className="max-w-3xl mx-auto space-y-6 text-[#b4c9da]">
               <div className="flex items-center gap-3 text-blue-400">
-                <h2 className="text-base font-bold uppercase tracking-widest text-[#ffffff]">
+                <h2 className="text-lg md:text-xl font-bold uppercase tracking-widest text-[#ffffff]">
                   Module 4: Operations
                 </h2>
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">
+                <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
                   The Rules of Integers
                 </h1>
-                <p className="text-[#86a8c3] text-lg leading-relaxed">
+                <p className="text-[#86a8c3] text-xl md:text-2xl leading-relaxed">
                   When adding and subtracting integers, remember these key
                   concepts:
                 </p>
               </div>
-              <div className="bg-[#112a3d] rounded-lg p-6 border border-[#316995]/20 font-mono text-center shadow-inner mt-4">
-                <p className="mb-4">
+              <div className="bg-[#112a3d] rounded-lg p-6 md:p-8 border border-[#316995]/20 font-mono text-center shadow-inner mt-6 text-lg md:text-xl leading-loose">
+                <p className="mb-6">
                   1. Adding a negative is like subtracting a positive:
-                  <br /> <span className="text-white">a + (-b) = a - b</span>
+                  <br /> <span className="text-white text-xl md:text-2xl font-bold mt-2 inline-block">a + (-b) = a - b</span>
                 </p>
                 <p>
                   2. Subtracting a negative is like adding a positive:
-                  <br /> <span className="text-white">a - (-b) = a + b</span>
+                  <br /> <span className="text-white text-xl md:text-2xl font-bold mt-2 inline-block">a - (-b) = a + b</span>
                 </p>
               </div>
             </div>
